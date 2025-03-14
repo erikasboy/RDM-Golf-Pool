@@ -94,28 +94,28 @@ function App() {
   };
 
   useEffect(() => {
-    debugLog('App mounted');
+    console.log('Setting up auth state listener...');
     const unsubscribe = auth.onAuthStateChanged((user) => {
-      debugLog(`Auth state changed: ${user ? `User: ${user.email}` : 'No user'}`);
+      console.log(`Auth state changed: ${user ? `User: ${user.email}` : 'No user'}`);
       setUser(user);
       setLoading(false);
     });
 
     return () => {
-      debugLog('Cleaning up auth listener');
+      console.log('Cleaning up auth listener');
       unsubscribe();
     };
   }, [auth]);
 
   const handleGoogleLogin = async () => {
-    debugLog('Initiating Google login');
+    console.log('Initiating Google login with popup...');
     try {
       setAuthError(null);
-      setAuthMessage("Signing in with Google...");
+      setAuthMessage("Opening Google sign-in popup...");
       const result = await signInWithGoogle();
-      debugLog(`Google login successful: ${result.user.email}`);
+      console.log(`Google login successful: ${result.user.email}`);
     } catch (error) {
-      debugLog(`Google login error: ${error.message}`);
+      console.error('Google login error:', error);
       setAuthError(error.message);
     } finally {
       setAuthMessage("");
@@ -124,14 +124,14 @@ function App() {
 
   const handleEmailLogin = async (e) => {
     e.preventDefault();
-    debugLog('Initiating email login');
+    console.log('Initiating email login...');
     try {
       setAuthError(null);
       setAuthMessage("Signing in...");
       const result = await signInWithEmailAndPassword(auth, email, password);
-      debugLog(`Email login successful: ${result.user.email}`);
+      console.log(`Email login successful: ${result.user.email}`);
     } catch (error) {
-      debugLog(`Email login error: ${error.message}`);
+      console.error('Email login error:', error);
       setAuthError(error.message);
     } finally {
       setAuthMessage("");
@@ -141,9 +141,8 @@ function App() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      debugLog('User signed out');
+      console.log('User signed out');
     } catch (error) {
-      debugLog(`Logout error: ${error.message}`);
       console.error('Error signing out:', error);
     }
   };

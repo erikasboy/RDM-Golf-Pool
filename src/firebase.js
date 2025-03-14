@@ -1,6 +1,6 @@
 // Import the functions you need from the Firebase SDKs
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithPopup, browserPopupRedirectResolver } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, signInWithPopup, browserPopupRedirectResolver, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
@@ -16,12 +16,20 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
+console.log('Initializing Firebase with config:', firebaseConfig);
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firebase services
+// Initialize Firebase Auth with persistence
+console.log('Initializing Firebase auth...');
 export const auth = getAuth(app);
-auth.useDeviceLanguage(); // Use the device's preferred language
 
+// Set persistence to LOCAL
+console.log('Setting auth persistence to LOCAL...');
+setPersistence(auth, browserLocalPersistence).catch(error => {
+  console.error('Error setting persistence:', error);
+});
+
+// Initialize other Firebase services
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 
@@ -29,15 +37,15 @@ export const storage = getStorage(app);
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({
   prompt: 'select_account',
-  // Add additional OAuth 2.0 scopes if needed
-  scope: 'email profile'
+  // Disable redirect mode
+  redirect_uri: null
 });
 
-// Function to sign in with Google
+// Function to sign in with Google using popup
 export const signInWithGoogle = async () => {
   try {
     console.log('Starting Google sign in with popup...');
-    // Use browserPopupRedirectResolver to handle third-party cookie restrictions
+    // Force popup mode with browserPopupRedirectResolver
     const result = await signInWithPopup(auth, googleProvider, browserPopupRedirectResolver);
     console.log('Google sign in successful:', result.user.email);
     return result;
