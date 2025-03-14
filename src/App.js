@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
-import { auth, googleProvider, signInWithGoogle, handleRedirectResult } from "./firebase";
+import { auth, signInWithGoogle } from "./firebase";
 import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import Profile from "./Profile";
 import Picks from "./Picks";
