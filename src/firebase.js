@@ -1,6 +1,6 @@
 // Import the functions you need from the Firebase SDKs
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, signInWithPopup, browserPopupRedirectResolver } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
@@ -20,19 +20,27 @@ const app = initializeApp(firebaseConfig);
 
 // Initialize Firebase services
 export const auth = getAuth(app);
+auth.useDeviceLanguage(); // Use the device's preferred language
+
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 
-// Create Google Auth Provider
+// Create Google Auth Provider with custom parameters
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({
-  prompt: 'select_account'
+  prompt: 'select_account',
+  // Add additional OAuth 2.0 scopes if needed
+  scope: 'email profile'
 });
 
 // Function to sign in with Google
 export const signInWithGoogle = async () => {
   try {
-    return await signInWithPopup(auth, googleProvider);
+    console.log('Starting Google sign in with popup...');
+    // Use browserPopupRedirectResolver to handle third-party cookie restrictions
+    const result = await signInWithPopup(auth, googleProvider, browserPopupRedirectResolver);
+    console.log('Google sign in successful:', result.user.email);
+    return result;
   } catch (error) {
     console.error('Error during Google sign in:', error);
     throw error;
