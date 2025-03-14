@@ -81,7 +81,7 @@ const Picks = () => {
 
       try {
         // First try to get the tournament schedule
-        const scheduleUrl = `https://api.sportsdata.io/golf/v2/json/Tournaments/${new Date().getFullYear()}?key=${process.env.NEXT_PUBLIC_SPORTDATA_API_KEY}`;
+        const scheduleUrl = `/api/golf?endpoint=/Tournaments/${new Date().getFullYear()}`;
         console.log("Fetching tournament schedule from:", scheduleUrl);
         
         const scheduleResponse = await fetch(scheduleUrl);
@@ -89,7 +89,7 @@ const Picks = () => {
 
         if (!scheduleResponse.ok) {
           // If we can't get current year, try next year
-          const nextYearUrl = `https://api.sportsdata.io/golf/v2/json/Tournaments/${new Date().getFullYear() + 1}?key=${process.env.NEXT_PUBLIC_SPORTDATA_API_KEY}`;
+          const nextYearUrl = `/api/golf?endpoint=/Tournaments/${new Date().getFullYear() + 1}`;
           console.log("Trying next year's schedule from:", nextYearUrl);
           
           const nextYearResponse = await fetch(nextYearUrl);
@@ -174,7 +174,7 @@ const Picks = () => {
       ];
 
       for (const endpoint of endpoints) {
-        const url = `https://api.sportsdata.io/golf/v2/json${endpoint}?key=${process.env.NEXT_PUBLIC_SPORTDATA_API_KEY}`;
+        const url = `/api/golf?endpoint=${endpoint}`;
         console.log("Trying endpoint:", url);
         
         const response = await fetch(url);
