@@ -1,20 +1,8 @@
 // Import the functions you need from the Firebase SDKs
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence, onAuthStateChanged } from "firebase/auth";
-import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
-import { debugConfig } from './config';
-
-// Debug logging for environment variables
-console.log('Environment variables check:', {
-  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
-  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.REACT_APP_FIREBASE_APP_ID,
-  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
-});
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -28,76 +16,28 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-console.log('Initializing Firebase app with config:', firebaseConfig);
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firebase Auth
-console.log('Initializing Firebase auth...');
+// Initialize Firebase services
 export const auth = getAuth(app);
-
-// Set persistence to LOCAL
-console.log('Setting auth persistence to LOCAL...');
-setPersistence(auth, browserLocalPersistence)
-  .then(() => {
-    console.log('Auth persistence set to LOCAL successfully');
-  })
-  .catch((error) => {
-    console.error('Error setting persistence:', error);
-  });
-
-// Initialize Firestore
 export const db = getFirestore(app);
-
-// Initialize Storage
 export const storage = getStorage(app);
 
 // Create Google Auth Provider
 const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
 
 // Function to sign in with Google
-export const signInWithGoogle = async (useRedirect = false) => {
-  console.log('Starting Google sign in process...');
+export const signInWithGoogle = async () => {
   try {
-    // Set persistence before sign in
-    await setPersistence(auth, browserLocalPersistence);
-    
-    console.log('Using popup flow for sign in');
-    const result = await signInWithPopup(auth, googleProvider);
-    console.log('Popup sign in successful:', result.user.email);
-    return result;
+    return await signInWithPopup(auth, googleProvider);
   } catch (error) {
     console.error('Error during Google sign in:', error);
     throw error;
   }
 };
-
-// Set up auth state listener
-onAuthStateChanged(auth, (user) => {
-  console.log('Global auth state changed:', user ? `User: ${user.email}` : 'No user');
-  console.log('Auth change details:', {
-    timestamp: new Date().toISOString(),
-    hasUser: !!user,
-    redirectFlag: localStorage.getItem('authRedirect'),
-    currentURL: window.location.href,
-    provider: user?.providerData?.[0]?.providerId
-  });
-  if (user) {
-    console.log('User details:', {
-      uid: user.uid,
-      email: user.email,
-      emailVerified: user.emailVerified,
-      providerData: user.providerData,
-      metadata: user.metadata
-    });
-  }
-});
-
-// Configure Google provider
-googleProvider.setCustomParameters({
-  prompt: 'select_account',
-  // Add login_hint if we have a previous email
-  login_hint: localStorage.getItem('lastLoginEmail') || undefined
-});
 
 // Tournament schedule for 2025
 const TOURNAMENTS = {
