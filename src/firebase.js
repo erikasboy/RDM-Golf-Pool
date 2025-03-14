@@ -1,7 +1,7 @@
 // Import the functions you need from the Firebase SDKs
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup, browserPopupRedirectResolver, setPersistence, browserLocalPersistence } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 // Your web app's Firebase configuration
@@ -56,7 +56,7 @@ export const signInWithGoogle = async () => {
 };
 
 // Tournament schedule for 2025
-const TOURNAMENTS = {
+export const TOURNAMENTS = {
   "players-2025": {
     id: "players-2025",
     name: "The Players Championship",
@@ -109,7 +109,7 @@ const TOURNAMENTS = {
   }
 };
 
-const isTournamentActive = (tournament) => {
+export const isTournamentActive = (tournament) => {
   const now = new Date();
   const startDate = new Date(tournament.startDate);
   const endDate = new Date(tournament.endDate);
@@ -126,7 +126,7 @@ const isTournamentActive = (tournament) => {
   return now >= startDate && now <= endDate;
 };
 
-const isTournamentUpcoming = (tournament) => {
+export const isTournamentUpcoming = (tournament) => {
   const now = new Date();
   const startDate = new Date(tournament.startDate);
   startDate.setHours(0, 0, 0, 0); // Set to start of day
@@ -154,8 +154,27 @@ export async function getCurrentTournament(options = { updateCache: true }) {
       return currentData;
     }
 
+    // If we don't have a current tournament, check the TOURNAMENTS object
+    const now = new Date();
+    const activeTournament = Object.values(TOURNAMENTS).find(tournament => isTournamentActive(tournament));
+    
+    if (activeTournament) {
+      console.log('Found active tournament in local data:', activeTournament);
+      return activeTournament;
+    }
+
+    // If no active tournament, find the next upcoming tournament
+    const upcomingTournament = Object.values(TOURNAMENTS)
+      .filter(tournament => isTournamentUpcoming(tournament))
+      .sort((a, b) => new Date(a.startDate) - new Date(b.startDate))[0];
+
+    if (upcomingTournament) {
+      console.log('Found upcoming tournament:', upcomingTournament);
+      return upcomingTournament;
+    }
+
     // If we don't have a current tournament, return null
-    console.log('No current tournament found in Firestore');
+    console.log('No current or upcoming tournament found');
     return null;
   } catch (error) {
     console.error("Error getting current tournament:", error);
