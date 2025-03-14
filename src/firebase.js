@@ -3,9 +3,10 @@ import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithRedirect, signInWithPopup, getRedirectResult, setPersistence, browserLocalPersistence, onAuthStateChanged } from "firebase/auth";
 import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import { debugConfig } from './config';
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
+// Debug logging for environment variables
+console.log('Environment variables check:', {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
   authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
@@ -13,10 +14,13 @@ const firebaseConfig = {
   messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.REACT_APP_FIREBASE_APP_ID,
   measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
-};
+});
+
+// Your web app's Firebase configuration
+const firebaseConfig = debugConfig.firebase;
 
 // Initialize Firebase
-console.log('Initializing Firebase app...');
+console.log('Initializing Firebase app with config:', firebaseConfig);
 const app = initializeApp(firebaseConfig);
 
 // Initialize Firebase services
