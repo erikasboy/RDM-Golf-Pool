@@ -25,7 +25,7 @@ const app = initializeApp(firebaseConfig);
 
 // Initialize Firebase Auth
 console.log('Initializing Firebase auth...');
-const auth = getAuth(app);
+export const auth = getAuth(app);
 
 // Set persistence to LOCAL
 console.log('Setting auth persistence to LOCAL...');
@@ -38,10 +38,10 @@ setPersistence(auth, browserLocalPersistence)
   });
 
 // Initialize Firestore
-const db = getFirestore(app);
+export const db = getFirestore(app);
 
 // Initialize Storage
-const storage = getStorage(app);
+export const storage = getStorage(app);
 
 // Create Google Auth Provider
 const googleProvider = new GoogleAuthProvider();
@@ -53,15 +53,10 @@ export const signInWithGoogle = async (useRedirect = false) => {
     // Set persistence before sign in
     await setPersistence(auth, browserLocalPersistence);
     
-    if (useRedirect) {
-      console.log('Using redirect flow for sign in');
-      // Redirect flow code...
-    } else {
-      console.log('Using popup flow for sign in');
-      const result = await signInWithPopup(auth, googleProvider);
-      console.log('Popup sign in successful:', result.user.email);
-      return result;
-    }
+    console.log('Using popup flow for sign in');
+    const result = await signInWithPopup(auth, googleProvider);
+    console.log('Popup sign in successful:', result.user.email);
+    return result;
   } catch (error) {
     console.error('Error during Google sign in:', error);
     throw error;
