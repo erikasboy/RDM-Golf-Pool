@@ -313,43 +313,20 @@ function App() {
 
   const handleGoogleLogin = async () => {
     debugLog('Initiating Google login');
-    debugLog(`Current URL: ${window.location.href}`);
-    debugLog(`User Agent: ${navigator.userAgent}`);
-    debugLog(`Is mobile: ${/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)}`);
     try {
       setAuthInProgress(true);
       setAuthError(null);
-      setAuthMessage("Redirecting to Google sign in...");
+      setAuthMessage("Signing in with Google...");
       
-      // Clear any existing auth state before starting new login
-      localStorage.removeItem('authRedirect');
-      localStorage.removeItem('authStartTime');
-      localStorage.removeItem('authAttempt');
-      localStorage.removeItem('lastAuthAttempt');
-      
-      // Store current URL for debugging
-      localStorage.setItem('preAuthUrl', window.location.href);
-      localStorage.setItem('authRedirect', 'true');
-      localStorage.setItem('authAttempt', 'google');
-      localStorage.setItem('lastAuthAttempt', Date.now().toString());
-      
-      // Log final state before redirect
-      debugLog(`Final state before redirect:
-        - URL: ${window.location.href}
-        - Auth redirect flag: ${localStorage.getItem('authRedirect')}
-        - Last auth attempt: ${new Date(parseInt(localStorage.getItem('lastAuthAttempt') || '0')).toLocaleString()}
-        - Is mobile: ${/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)}
-      `);
-      
-      await signInWithGoogle(true);
-      debugLog('Google sign in initiated');
+      const result = await signInWithGoogle(false); // false means use popup
+      debugLog(`Google login successful: ${result.user.email}`);
+      setUser(result.user);
     } catch (error) {
       debugLog(`Google login error: ${error.message}`);
       setAuthError(error.message);
+    } finally {
       setAuthMessage("");
       setAuthInProgress(false);
-      localStorage.removeItem('authRedirect');
-      localStorage.removeItem('authAttempt');
     }
   };
 

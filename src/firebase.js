@@ -1,6 +1,6 @@
 // Import the functions you need from the Firebase SDKs
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithRedirect, signInWithPopup, getRedirectResult, setPersistence, browserLocalPersistence, onAuthStateChanged } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence, onAuthStateChanged } from "firebase/auth";
 import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { debugConfig } from './config';
@@ -23,17 +23,50 @@ const firebaseConfig = debugConfig.firebase;
 console.log('Initializing Firebase app with config:', firebaseConfig);
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firebase services
+// Initialize Firebase Auth
 console.log('Initializing Firebase auth...');
-export const auth = getAuth(app);
+const auth = getAuth(app);
 
-// Set persistence to LOCAL (survives browser restart)
+// Set persistence to LOCAL
 console.log('Setting auth persistence to LOCAL...');
-setPersistence(auth, browserLocalPersistence).then(() => {
-  console.log('Auth persistence set to LOCAL successfully');
-}).catch(error => {
-  console.error('Error setting auth persistence:', error);
-});
+setPersistence(auth, browserLocalPersistence)
+  .then(() => {
+    console.log('Auth persistence set to LOCAL successfully');
+  })
+  .catch((error) => {
+    console.error('Error setting persistence:', error);
+  });
+
+// Initialize Firestore
+const db = getFirestore(app);
+
+// Initialize Storage
+const storage = getStorage(app);
+
+// Create Google Auth Provider
+const googleProvider = new GoogleAuthProvider();
+
+// Function to sign in with Google
+export const signInWithGoogle = async (useRedirect = false) => {
+  console.log('Starting Google sign in process...');
+  try {
+    // Set persistence before sign in
+    await setPersistence(auth, browserLocalPersistence);
+    
+    if (useRedirect) {
+      console.log('Using redirect flow for sign in');
+      // Redirect flow code...
+    } else {
+      console.log('Using popup flow for sign in');
+      const result = await signInWithPopup(auth, googleProvider);
+      console.log('Popup sign in successful:', result.user.email);
+      return result;
+    }
+  } catch (error) {
+    console.error('Error during Google sign in:', error);
+    throw error;
+  }
+};
 
 // Set up auth state listener
 onAuthStateChanged(auth, (user) => {
@@ -56,221 +89,12 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-export const googleProvider = new GoogleAuthProvider();
-
 // Configure Google provider
 googleProvider.setCustomParameters({
   prompt: 'select_account',
   // Add login_hint if we have a previous email
   login_hint: localStorage.getItem('lastLoginEmail') || undefined
 });
-
-export const db = getFirestore(app);
-export const storage = getStorage(app);
-
-// Add authentication helper functions
-export const signInWithGoogle = async (useRedirect = true) => {
-  console.log('Starting Google sign in process...');
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  
-  try {
-    // Clear any existing auth state
-    localStorage.removeItem('authRedirect');
-    localStorage.removeItem('authStartTime');
-    localStorage.removeItem('authAttempt');
-    localStorage.removeItem('lastAuthAttempt');
-    
-    // Sign out current user if any
-    if (auth.currentUser) {
-      console.log('Signing out current user before new sign in:', auth.currentUser.email);
-      await auth.signOut();
-    }
-
-    // Configure Google provider
-    googleProvider.setCustomParameters({
-      prompt: 'select_account',
-      login_hint: localStorage.getItem('lastLoginEmail') || undefined
-    });
-
-    // On mobile, try popup first as it's more reliable
-    if (isMobile) {
-      try {
-        console.log('Attempting popup sign-in on mobile...');
-        const result = await signInWithPopup(auth, googleProvider);
-        if (result.user) {
-          console.log('Popup sign-in successful');
-          localStorage.setItem('lastLoginEmail', result.user.email);
-          return result;
-        }
-      } catch (popupError) {
-        console.log('Popup sign-in failed, falling back to redirect:', popupError.message);
-        // Fall through to redirect flow
-      }
-    }
-
-    if (useRedirect || isMobile) {
-      console.log('Using redirect flow for sign in');
-      // Set new auth state
-      const timestamp = Date.now();
-      localStorage.setItem('authRedirect', 'true');
-      localStorage.setItem('authStartTime', timestamp.toString());
-      localStorage.setItem('authAttempt', 'google');
-      localStorage.setItem('lastAuthAttempt', timestamp.toString());
-      
-      // Log the current URL before redirect
-      console.log('Current URL before redirect:', window.location.href);
-      console.log('Setting up redirect state:', {
-        timestamp,
-        url: window.location.href,
-        userAgent: navigator.userAgent,
-        isMobile
-      });
-      
-      // Ensure persistence is set before redirect
-      console.log('Ensuring persistence is set...');
-      await setPersistence(auth, browserLocalPersistence);
-      
-      // Configure additional parameters for mobile
-      if (isMobile) {
-        googleProvider.setCustomParameters({
-          ...googleProvider.customParameters,
-          // Force OAuth to use Safari's in-app browser
-          mobile: '1',
-          redirect_uri: window.location.origin
-        });
-      }
-      
-      // Initiate the redirect
-      console.log('Initiating redirect to Google...');
-      await signInWithRedirect(auth, googleProvider);
-      console.log('Redirect initiated successfully');
-      
-      // Log the final state before redirect
-      console.log('Final state before redirect:', {
-        authRedirect: localStorage.getItem('authRedirect'),
-        authAttempt: localStorage.getItem('authAttempt'),
-        lastAuthAttempt: localStorage.getItem('lastAuthAttempt'),
-        currentUrl: window.location.href
-      });
-    } else {
-      console.log('Using popup flow for sign in');
-      const result = await signInWithPopup(auth, googleProvider);
-      if (result.user) {
-        localStorage.setItem('lastLoginEmail', result.user.email);
-      }
-      return result;
-    }
-  } catch (error) {
-    console.error("Error in signInWithGoogle:", error);
-    console.error("Error code:", error.code);
-    console.error("Error message:", error.message);
-    if (error.email) console.error("Error email:", error.email);
-    if (error.credential) console.error("Error credential:", error.credential);
-    
-    localStorage.removeItem('authRedirect');
-    localStorage.removeItem('authStartTime');
-    localStorage.removeItem('authAttempt');
-    localStorage.removeItem('lastAuthAttempt');
-    throw error;
-  }
-};
-
-// Handle redirect result with timeout
-export const handleRedirectResult = async () => {
-  console.log('Checking for redirect result...');
-  console.log('Redirect check details:', {
-    timestamp: new Date().toISOString(),
-    currentURL: window.location.href,
-    hasUser: !!auth.currentUser,
-    redirectFlag: localStorage.getItem('authRedirect'),
-    attemptType: localStorage.getItem('authAttempt'),
-    startTime: localStorage.getItem('authStartTime'),
-    searchParams: window.location.search,
-    hash: window.location.hash
-  });
-  
-  // Check if we're in a redirect flow
-  if (!localStorage.getItem('authRedirect')) {
-    console.log('No redirect in progress, checking for pending auth...');
-    
-    // Check if we have a pending auth that's recent (within last 2 minutes)
-    const lastAttempt = parseInt(localStorage.getItem('lastAuthAttempt') || '0');
-    const timeSinceLastAttempt = Date.now() - lastAttempt;
-    console.log('Auth timing:', {
-      lastAttempt: new Date(lastAttempt).toISOString(),
-      timeSinceLastAttempt,
-      isRecent: timeSinceLastAttempt < 120000
-    });
-    
-    if (timeSinceLastAttempt < 120000) {
-      console.log('Recent auth attempt found, checking redirect result anyway');
-    } else {
-      console.log('No recent auth attempt found');
-      return null;
-    }
-  }
-
-  try {
-    console.log('Getting redirect result...');
-    const result = await getRedirectResult(auth);
-    console.log('Redirect result received:', result ? 'Success' : 'No result');
-    
-    if (result?.user) {
-      console.log('User successfully signed in:', result.user.email);
-      console.log('User ID:', result.user.uid);
-      console.log('Email verified:', result.user.emailVerified);
-      console.log('Provider data:', result.user.providerData);
-      
-      // Store the email for future sign-ins
-      localStorage.setItem('lastLoginEmail', result.user.email);
-      
-      // Double-check the auth state
-      const currentUser = auth.currentUser;
-      console.log('Current auth state after redirect:', currentUser ? `User: ${currentUser.email}` : 'No user');
-      
-      // Ensure the auth state persists
-      await setPersistence(auth, browserLocalPersistence);
-      
-      // Only clear auth state after successful sign in
-      localStorage.removeItem('authRedirect');
-      localStorage.removeItem('authStartTime');
-      localStorage.removeItem('authAttempt');
-      localStorage.removeItem('lastAuthAttempt');
-    } else {
-      console.log('No user from redirect result');
-      console.log('Current auth state:', auth.currentUser ? `User: ${auth.currentUser.email}` : 'No user');
-      // Don't clear auth state if we're still waiting for the redirect
-      if (!localStorage.getItem('authRedirect')) {
-        localStorage.removeItem('authStartTime');
-        localStorage.removeItem('authAttempt');
-        localStorage.removeItem('lastAuthAttempt');
-      }
-    }
-    
-    return result;
-  } catch (error) {
-    console.error("Error in handleRedirectResult:", error);
-    console.error("Error code:", error.code);
-    console.error("Error message:", error.message);
-    if (error.email) console.error("Error email:", error.email);
-    if (error.credential) console.error("Error credential:", error.credential);
-    
-    // Clear auth state on error
-    localStorage.removeItem('authRedirect');
-    localStorage.removeItem('authStartTime');
-    localStorage.removeItem('authAttempt');
-    localStorage.removeItem('lastAuthAttempt');
-    
-    // Throw a more specific error
-    if (error.code === 'auth/invalid-credential') {
-      throw new Error('Sign in was not completed. Please try again.');
-    } else if (error.code === 'auth/timeout') {
-      throw new Error('Sign in timed out. Please try again.');
-    } else {
-      throw new Error(`Sign in failed: ${error.message}`);
-    }
-  }
-};
 
 // Tournament schedule for 2025
 const TOURNAMENTS = {
