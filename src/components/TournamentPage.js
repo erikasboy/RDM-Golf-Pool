@@ -33,7 +33,7 @@ const TournamentPage = () => {
     const fetchTournamentData = async () => {
       try {
         // Get the current tournament (The Players Championship)
-        const currentTournamentUrl = `https://api.sportsdata.io/golf/v2/json/LeaderboardBasic/654?key=${process.env.REACT_APP_SPORTDATA_API_KEY}`;
+        const currentTournamentUrl = `https://api.sportsdata.io/golf/v2/json/LeaderboardBasic/654?key=${process.env.NEXT_PUBLIC_SPORTDATA_API_KEY}`;
         console.log('Fetching current tournament data from:', currentTournamentUrl);
         
         const currentResponse = await fetch(currentTournamentUrl);
@@ -65,9 +65,9 @@ const TournamentPage = () => {
         }
 
         // Only fetch weather if we have an API key
-        if (process.env.REACT_APP_WEATHER_API_KEY) {
+        if (process.env.NEXT_PUBLIC_WEATHER_API_KEY) {
           // Fetch weather data for TPC Sawgrass (Ponte Vedra Beach, FL)
-          const weatherUrl = `https://api.weatherapi.com/v1/forecast.json?key=${process.env.REACT_APP_WEATHER_API_KEY}&q=Ponte%20Vedra%20Beach,FL&days=3&aqi=no`;
+          const weatherUrl = `https://api.weatherapi.com/v1/forecast.json?key=${process.env.NEXT_PUBLIC_WEATHER_API_KEY}&q=Ponte%20Vedra%20Beach,FL&days=3&aqi=no`;
           console.log('Fetching weather data from:', weatherUrl);
           
           const weatherResponse = await fetch(weatherUrl);
