@@ -1,0 +1,648 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@700&family=Source+Sans+Pro:wght@300;400;600&display=swap');
+
+.tournament-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #215127 0%, #2a6a33 100%);
+  color: #fff;
+  padding: 2rem;
+  font-family: 'Source Sans Pro', sans-serif;
+}
+
+.tournament-header {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.tournament-header h1 {
+  font-family: 'Roboto Slab', serif;
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #A67C0D;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tournament-details {
+  margin-bottom: 1.5rem;
+}
+
+.tournament-details .dates {
+  font-family: 'Source Sans Pro', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 300;
+  color: #fff;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.02em;
+}
+
+.tournament-details .location {
+  font-size: 1.2rem;
+  color: #A67C0D;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.tournament-description {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 300;
+}
+
+.main-content {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.tournament-status,
+.weather-section {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1.5rem;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.leaderboard-section h2 {
+  font-family: 'Roboto Slab', serif;
+  color: #A67C0D;
+  margin-bottom: 1rem;
+  font-size: 1.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.current-weather h3,
+.forecast h3 {
+  color: #A67C0D;
+  margin-bottom: 0.75rem;
+  font-family: 'Source Sans Pro', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.weather-section h2 {
+  font-family: 'Roboto Slab', serif;
+  color: #A67C0D;
+  margin-bottom: 1rem;
+  font-size: 1.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  background: #fff;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.leaderboard-table th,
+.leaderboard-table td {
+  padding: 0.75rem;
+  text-align: center;
+  border-bottom: 1px solid #e5e7eb;
+  font-family: 'Source Sans Pro', sans-serif;
+}
+
+.leaderboard-table th {
+  background: rgba(166, 124, 13, 0.2);
+  color: #A67C0D;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.9rem;
+}
+
+.leaderboard-table td {
+  color: #1f2937;
+  font-size: 0.95rem;
+}
+
+.leaderboard-table td:first-child {
+  font-weight: 600;
+  color: #A67C0D;
+}
+
+.leaderboard-table td:nth-child(2) {
+  text-align: left;
+  color: #0D32A6;
+  font-weight: 500;
+}
+
+.leaderboard-table tr:nth-child(even) {
+  background: #f8f9fa;
+}
+
+.view-more-button {
+  background: #A67C0D;
+  color: #fff;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  margin-top: 1rem;
+  transition: background-color 0.2s;
+  font-family: 'Source Sans Pro', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.view-more-button:hover {
+  background: #8a670b;
+}
+
+.weather-info {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.current-weather,
+.forecast {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  border-radius: 4px;
+}
+
+.weather-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.weather-details p {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.5rem;
+  border-radius: 4px;
+  text-align: center;
+  font-weight: 500;
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.forecast-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+}
+
+.forecast-day {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.75rem;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.forecast-day .date {
+  font-family: 'Source Sans Pro', sans-serif;
+  font-size: 1.1rem;
+  color: #A67C0D;
+  margin-bottom: 0.5rem;
+  font-weight: 300;
+  letter-spacing: 0.02em;
+}
+
+.weather-icon {
+  margin: 0.5rem 0;
+}
+
+.weather-icon img {
+  width: 48px;
+  height: 48px;
+}
+
+.forecast-day p {
+  margin: 0.25rem 0;
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.forecast-day .temp {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #A67C0D;
+}
+
+.error {
+  color: #A60D3A;
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+@media (max-width: 1024px) {
+  .main-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .weather-section {
+    display: none; /* Hide weather on mobile */
+  }
+
+  .forecast-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .tournament-page {
+    padding: 1rem;
+  }
+
+  .tournament-header h1 {
+    font-size: 2rem;
+  }
+
+  .tournament-details .dates {
+    font-size: 1.3rem;
+  }
+
+  .weather-details {
+    grid-template-columns: 1fr;
+  }
+  
+  .forecast-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+
+  .leaderboard-table {
+    font-size: 0.9rem;
+  }
+
+  .leaderboard-table th,
+  .leaderboard-table td {
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .forecast-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tournament-info {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.lock-time {
+  font-size: 1.1rem;
+  color: #dc3545;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background: #fff;
+  border-radius: 4px;
+  border-left: 4px solid #dc3545;
+}
+
+.odds-unavailable {
+  color: #666;
+  font-style: italic;
+  padding: 1rem;
+  background: #fff;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.tournament-info h3 {
+  color: #333;
+  margin: 1rem 0;
+  font-size: 1.2rem;
+}
+
+.tournament-status-info {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.tournament-status-info p {
+  margin: 0.5rem 0;
+  color: #333;
+}
+
+.pre-tournament-info {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.field-info {
+  margin-top: 1.5rem;
+}
+
+.field-info h3 {
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.player-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.player-name {
+  padding: 0.5rem;
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.leaderboard-placeholder {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  margin: 2rem 0;
+}
+
+.leaderboard-placeholder p {
+  font-size: 1.2rem;
+  color: var(--color-dark-grey);
+  margin: 0;
+}
+
+.tournaments-page {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.tournaments-page h1 {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: var(--color-gold);
+  font-family: 'Roboto Slab', serif;
+  font-size: 2.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.tournaments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.tournament-card {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 1.5rem;
+  transition: transform 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.tournament-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-gold);
+  text-decoration: none;
+  color: inherit;
+}
+
+.tournament-card h2 {
+  color: var(--color-gold);
+  font-family: 'Roboto Slab', serif;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tournament-card .tournament-details {
+  margin-bottom: 1rem;
+}
+
+.tournament-card .dates {
+  color: var(--color-light-grey);
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.tournament-card .location {
+  color: #ffffff;
+  font-size: 1rem;
+}
+
+.tournament-card .description {
+  color: #ffffff;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.tournament-status {
+  margin-bottom: 1rem;
+}
+
+.tournament-status .status {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tournament-status .status.active {
+  background: var(--color-gold);
+  color: var(--color-dark-grey);
+}
+
+.tournament-status .status.upcoming {
+  background: var(--color-light-green);
+  color: var(--color-dark-grey);
+}
+
+.tournament-status .status.completed {
+  background: var(--color-dark-grey);
+  color: var(--color-light-grey);
+}
+
+.view-tournament {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background: var(--color-gold);
+  color: var(--color-dark-grey);
+  text-decoration: none;
+  border-radius: 2px;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.view-tournament:hover {
+  background: var(--color-light-grey);
+}
+
+@media (max-width: 768px) {
+  .tournaments-page {
+    padding: 1rem;
+  }
+
+  .tournaments-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tournament-card {
+    padding: 1rem;
+  }
+
+  .tournament-card h2 {
+    font-size: 1.3rem;
+  }
+}
+
+.odds-section {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+}
+
+.odds-section h3 {
+  color: var(--color-gold);
+  font-family: 'Roboto Slab', serif;
+  font-size: 1.3rem;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.odds-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.odds-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 80px;
+  align-items: center;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.odds-row:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.odds-row .position {
+  color: var(--color-gold);
+  font-weight: 600;
+  text-align: center;
+}
+
+.odds-row .player-name {
+  color: var(--color-dark-grey);
+  font-weight: 500;
+}
+
+.odds-row .odds {
+  color: var(--color-light-grey);
+  text-align: right;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .odds-section {
+    padding: 1rem;
+  }
+
+  .odds-row {
+    grid-template-columns: 30px 1fr 70px;
+    font-size: 0.9rem;
+  }
+}
+
+.featured-tournament {
+  margin-bottom: 3rem;
+}
+
+.featured-tournament-card {
+  display: block;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 2rem;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.2s, background-color 0.2s;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.featured-tournament-card:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.2);
+  border-color: var(--color-gold);
+  text-decoration: none;
+  color: inherit;
+}
+
+.featured-tournament-content h2 {
+  color: var(--color-gold);
+  font-family: 'Roboto Slab', serif;
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.featured-tournament-content .tournament-details {
+  margin-bottom: 1.5rem;
+}
+
+.featured-tournament-content .dates {
+  color: var(--color-light-grey);
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.featured-tournament-content .location {
+  color: #ffffff;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.featured-tournament-content .description {
+  color: #ffffff;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.other-tournaments {
+  margin-top: 2rem;
+}
+
+.other-tournaments h2 {
+  color: var(--color-gold);
+  font-family: 'Roboto Slab', serif;
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+} 

@@ -1,0 +1,14 @@
+{
+  "name": "rdm-pool-scripts",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Scripts for RDM Pool management",
+  "main": "createTestUsers.js",
+  "scripts": {
+    "create-users": "node createTestUsers.js"
+  },
+  "dependencies": {
+    "firebase": "^10.8.0",
+    "dotenv": "^16.4.5"
+  }
+} 

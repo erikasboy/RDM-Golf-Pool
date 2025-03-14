@@ -1,0 +1,381 @@
+.profile-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #215127 0%, #2a6a33 100%);
+  color: #fff;
+  padding: 2rem;
+  font-family: 'Source Sans Pro', sans-serif;
+}
+
+.profile-container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.profile-title {
+  font-family: 'Roboto Slab', serif;
+  font-size: 2.5rem;
+  color: #A67C0D;
+  text-align: center;
+  margin-bottom: 2rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.profile-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.profile-section {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.profile-section h2 {
+  color: #A67C0D;
+  font-family: 'Roboto Slab', serif;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.profile-pic-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.profile-pic {
+  width: 150px;
+  height: 150px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 3px solid #A67C0D;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.profile-pic-preview {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  border-radius: 12px;
+  border: 3px solid #A67C0D;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.profile-pic-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.preview-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 1rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.profile-pic-preview:hover .preview-overlay {
+  opacity: 1;
+}
+
+.profile-pic-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.file-input {
+  display: none;
+}
+
+.file-input-label {
+  background: #A67C0D;
+  color: #215127;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.file-input-label:hover {
+  background: #B88A0D;
+}
+
+.upload-button, .update-button {
+  background: #A67C0D;
+  color: #215127;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.upload-button:hover:not(:disabled), .update-button:hover:not(:disabled) {
+  background: #B88A0D;
+  transform: translateY(-1px);
+}
+
+.upload-button:disabled, .update-button:disabled {
+  background: #666;
+  cursor: not-allowed;
+}
+
+.display-name-container {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.display-name-input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 2px solid #A67C0D;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 1rem;
+}
+
+.display-name-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.account-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.account-info p {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.account-info strong {
+  color: #A67C0D;
+}
+
+.account-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+  padding: 1rem;
+}
+
+.account-profile-pic {
+  width: 120px;
+  height: 120px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 3px solid #A67C0D;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.account-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.account-details h2 {
+  margin: 0;
+  color: #A67C0D;
+  font-size: 1.8rem;
+}
+
+.account-email {
+  font-size: 1.1rem;
+  margin: 0;
+  color: #fff;
+}
+
+.account-rank {
+  font-size: 1.1rem;
+  margin: 0;
+  color: #A67C0D;
+  font-weight: 600;
+}
+
+.account-quote {
+  font-size: 0.9rem;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-style: italic;
+}
+
+.account-type {
+  font-size: 0.9rem;
+  margin: 0 0 0.25rem 0;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: capitalize;
+}
+
+.member-since {
+  font-size: 0.9rem;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.settings-toggle {
+  background: transparent;
+  border: 2px solid #A67C0D;
+  color: #A67C0D;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.settings-toggle:hover {
+  background: #A67C0D;
+  color: #215127;
+}
+
+.profile-settings {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.picks-section {
+  background: rgba(255, 255, 255, 0.08);
+  margin-top: 1rem;
+}
+
+.picks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.tournament-picks {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.tournament-picks h3 {
+  color: #A67C0D;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.4rem;
+}
+
+.tournament-date {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1rem;
+  margin: 0 0 1.5rem 0;
+}
+
+.golfers-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.golfer-pick {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.golfer-pick:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.golfer-name {
+  color: #fff;
+  font-weight: 500;
+  font-size: 1.1rem;
+}
+
+.golfer-odds {
+  color: #A67C0D;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.no-picks {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  font-style: italic;
+  font-size: 1.1rem;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+  .profile-page {
+    padding: 1rem;
+  }
+
+  .profile-container {
+    padding: 1rem;
+  }
+
+  .profile-title {
+    font-size: 2rem;
+  }
+
+  .profile-pic-actions {
+    flex-direction: column;
+  }
+
+  .display-name-container {
+    flex-direction: column;
+  }
+
+  .settings-toggle {
+    width: 100%;
+  }
+
+  .golfers-list {
+    grid-template-columns: 1fr;
+  }
+
+  .account-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  .account-profile-pic {
+    width: 100px;
+    height: 100px;
+  }
+} 
