@@ -94,7 +94,13 @@ const TournamentsPage = () => {
         console.log('Raw response:', responseText);
         
         if (!leaderboardResponse.ok) {
-          throw new Error(`Failed to fetch leaderboard data: ${leaderboardResponse.status}`);
+          // Try to parse error response as JSON
+          try {
+            const errorData = JSON.parse(responseText);
+            throw new Error(`Failed to fetch leaderboard data: ${leaderboardResponse.status}\nDetails: ${JSON.stringify(errorData, null, 2)}`);
+          } catch (parseError) {
+            throw new Error(`Failed to fetch leaderboard data: ${leaderboardResponse.status}\nResponse: ${responseText}`);
+          }
         }
         
         // Now parse the text as JSON
@@ -111,8 +117,12 @@ const TournamentsPage = () => {
         if (weatherResponse.ok) {
           const weatherText = await weatherResponse.text();
           console.log('Raw weather response:', weatherText);
-          const weatherData = JSON.parse(weatherText);
-          setWeather(weatherData);
+          try {
+            const weatherData = JSON.parse(weatherText);
+            setWeather(weatherData);
+          } catch (parseError) {
+            console.error('Error parsing weather data:', parseError);
+          }
         }
 
         setLoading(false);
