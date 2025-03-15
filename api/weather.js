@@ -26,17 +26,39 @@ module.exports = async (req, res) => {
       return;
     }
 
+    // Log the API key (first few characters)
+    const apiKey = process.env.WEATHER_API_KEY;
+    console.log('Weather API Key prefix:', apiKey ? apiKey.substring(0, 4) + '...' : 'undefined');
+
     // Construct the URL
-    const url = `https://api.weatherapi.com/v1/forecast.json?key=${process.env.WEATHER_API_KEY}&q=${encodeURIComponent(location)}&days=3&aqi=no`;
+    const url = `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${encodeURIComponent(location)}&days=3&aqi=no`;
+    console.log('Requesting Weather URL:', url.replace(apiKey, 'HIDDEN_KEY'));
 
     // Make the request to WeatherAPI
     const response = await fetch(url);
-    const data = await response.json();
+    console.log('WeatherAPI response status:', response.status);
 
-    // Forward the response
-    res.status(response.status).json(data);
+    // Get the response text first to debug any issues
+    const responseText = await response.text();
+    console.log('Weather response text preview:', responseText.substring(0, 100));
+
+    try {
+      // Try to parse the response as JSON
+      const data = JSON.parse(responseText);
+      res.status(response.status).json(data);
+    } catch (parseError) {
+      console.error('Error parsing weather JSON:', parseError);
+      res.status(500).json({ 
+        error: 'Invalid JSON response from WeatherAPI',
+        details: responseText.substring(0, 100),
+        status: response.status
+      });
+    }
   } catch (error) {
     console.error('Error in weather API:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: error.message
+    });
   }
 }; 

@@ -26,18 +26,40 @@ module.exports = async (req, res) => {
       return;
     }
 
+    // Log the API key (first few characters)
+    const apiKey = process.env.SPORTDATA_API_KEY;
+    console.log('API Key prefix:', apiKey ? apiKey.substring(0, 4) + '...' : 'undefined');
+
     // Construct the URL
     const baseUrl = 'https://api.sportsdata.io/golf/v2/json';
-    const url = `${baseUrl}${endpoint}?key=${process.env.SPORTDATA_API_KEY}`;
+    const url = `${baseUrl}${endpoint}?key=${apiKey}`;
+    console.log('Requesting URL:', url.replace(apiKey, 'HIDDEN_KEY'));
 
     // Make the request to SportsData.io
     const response = await fetch(url);
-    const data = await response.json();
+    console.log('SportsData.io response status:', response.status);
 
-    // Forward the response
-    res.status(response.status).json(data);
+    // Get the response text first to debug any issues
+    const responseText = await response.text();
+    console.log('Response text preview:', responseText.substring(0, 100));
+
+    try {
+      // Try to parse the response as JSON
+      const data = JSON.parse(responseText);
+      res.status(response.status).json(data);
+    } catch (parseError) {
+      console.error('Error parsing JSON:', parseError);
+      res.status(500).json({ 
+        error: 'Invalid JSON response from SportsData.io',
+        details: responseText.substring(0, 100),
+        status: response.status
+      });
+    }
   } catch (error) {
     console.error('Error in golf API:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: error.message
+    });
   }
 }; 
