@@ -5,6 +5,7 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Content-Type', 'application/json');
 
   // Handle OPTIONS request for CORS
   if (req.method === 'OPTIONS') {
@@ -28,7 +29,12 @@ module.exports = async (req, res) => {
 
     // Log the API key (first few characters)
     const apiKey = process.env.SPORTDATA_API_KEY;
-    console.log('API Key prefix:', apiKey ? apiKey.substring(0, 4) + '...' : 'undefined');
+    if (!apiKey) {
+      console.error('SPORTDATA_API_KEY is not set');
+      res.status(500).json({ error: 'API key is not configured' });
+      return;
+    }
+    console.log('API Key prefix:', apiKey.substring(0, 4) + '...');
 
     // Construct the URL
     const baseUrl = 'https://api.sportsdata.io/golf/v2/json';
