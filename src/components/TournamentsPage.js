@@ -84,18 +84,34 @@ const TournamentsPage = () => {
       try {
         // Fetch TPC Sawgrass leaderboard
         const leaderboardUrl = `/api/golf?endpoint=/LeaderboardBasic/654`;
+        console.log('Attempting to fetch from:', leaderboardUrl);
+        
         const leaderboardResponse = await fetch(leaderboardUrl);
+        console.log('Response status:', leaderboardResponse.status);
+        
+        // Get the raw text first
+        const responseText = await leaderboardResponse.text();
+        console.log('Raw response:', responseText);
+        
         if (!leaderboardResponse.ok) {
           throw new Error(`Failed to fetch leaderboard data: ${leaderboardResponse.status}`);
         }
-        const leaderboardData = await leaderboardResponse.json();
+        
+        // Now parse the text as JSON
+        const leaderboardData = JSON.parse(responseText);
         setLeaderboard(leaderboardData);
 
         // Fetch weather data for TPC Sawgrass
         const weatherUrl = `/api/weather?location=Ponte%20Vedra%20Beach,FL`;
+        console.log('Attempting to fetch weather from:', weatherUrl);
+        
         const weatherResponse = await fetch(weatherUrl);
+        console.log('Weather response status:', weatherResponse.status);
+        
         if (weatherResponse.ok) {
-          const weatherData = await weatherResponse.json();
+          const weatherText = await weatherResponse.text();
+          console.log('Raw weather response:', weatherText);
+          const weatherData = JSON.parse(weatherText);
           setWeather(weatherData);
         }
 
