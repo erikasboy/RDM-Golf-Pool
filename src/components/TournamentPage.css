@@ -717,4 +717,53 @@
   border-radius: 4px;
   font-size: 0.8rem;
   font-weight: bold;
+}
+
+/* Results Table Styles */
+.results-section {
+  margin-top: 20px;
+}
+
+.results-table {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 15px;
+}
+
+.results-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  background-color: #fff;
+  color: #333;
+}
+
+.results-table th {
+  background-color: #215127;
+  color: white;
+  padding: 10px;
+  text-align: left;
+  font-weight: bold;
+}
+
+.results-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #ddd;
+  color: #333;
+}
+
+.results-table tr:nth-child(even) {
+  background-color: #f5f5f5;
+}
+
+.results-table tr:hover {
+  background-color: #f5f5f5; /* Same as even rows, no hover effect */
+}
+
+.no-results {
+  padding: 20px;
+  text-align: center;
+  background-color: #f8f8f8;
+  border-radius: 4px;
+  color: #333;
 } 

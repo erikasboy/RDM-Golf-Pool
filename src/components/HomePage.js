@@ -237,7 +237,7 @@ const HomePage = () => {
                     tournamentPoints += points;
                     playerResults[playerName] = {
                       rank: playerResult.Rank,
-                      points: points,
+              points: points,
                       missedCut: playerResult.Rank === null || playerResult.Rank === undefined,
                       status: playerStatus,
                       isWithdrawn: isWithdrawn || isJasonDay

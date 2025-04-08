@@ -376,12 +376,26 @@ const Picks = () => {
     }
 
     try {
+      // Log the data we're about to save
+      console.log("Saving picks for tournament:", {
+        tournamentId: currentTournament.id,
+        tournamentName: currentTournament.name,
+        tournamentDate: currentTournament.startDate,
+        golfers: selectedGolfers.map(g => ({
+          name: g.Name,
+          id: g.PlayerID,
+          odds: g.OddsToWin || g.Odds || g.OddsWin
+        }))
+      });
+      
       // Save picks for the current tournament
       const tournamentPicksRef = doc(db, 'users', user.uid, 'picks', currentTournament.id);
       await setDoc(tournamentPicksRef, {
         golfers: selectedGolfers,
         timestamp: new Date(),
-        tournamentId: currentTournament.id
+        tournamentId: currentTournament.id,
+        tournamentName: currentTournament.name,
+        tournamentDate: currentTournament.startDate
       });
 
       // Update used golfers list

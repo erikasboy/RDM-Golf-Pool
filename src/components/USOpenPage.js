@@ -21,37 +21,18 @@ const mockOddsData = [
 ];
 
 const USOpenPage = () => {
-  // Mock odds data for the US Open
-  const oddsData = [
-    { name: "Scottie Scheffler", odds: "+800" },
-    { name: "Rory McIlroy", odds: "+1000" },
-    { name: "Jon Rahm", odds: "+1200" },
-    { name: "Viktor Hovland", odds: "+1500" },
-    { name: "Patrick Cantlay", odds: "+1800" },
-    { name: "Xander Schauffele", odds: "+2000" },
-    { name: "Collin Morikawa", odds: "+2200" },
-    { name: "Justin Thomas", odds: "+2500" },
-    { name: "Jordan Spieth", odds: "+2800" },
-    { name: "Matt Fitzpatrick", odds: "+3000" },
-    { name: "Brooks Koepka", odds: "+3500" },
-    { name: "Tony Finau", odds: "+4000" },
-    { name: "Max Homa", odds: "+4500" },
-    { name: "Sam Burns", odds: "+5000" },
-    { name: "Justin Rose", odds: "+5500" }
-  ];
+  const tournamentData = {
+    name: 'U.S. Open',
+    startDate: '2025-06-13',
+    endDate: '2025-06-16',
+    venue: 'Pinehurst No. 2',
+    location: 'Pinehurst, NC',
+    description: 'The U.S. Open, one of golf\'s four major championships, returns to Pinehurst No. 2. Known for its challenging conditions and demanding test of golf.',
+    weatherLocation: 'Pinehurst, NC',
+    oddsData: null // Will be populated when available
+  };
 
-  return (
-    <BaseTournamentPage
-      name="US Open"
-      startDate="2025-06-12"
-      endDate="2025-06-15"
-      venue="Pinehurst No. 2"
-      location="Pinehurst, NC"
-      description="The US Open returns to Pinehurst No. 2, Donald Ross's masterpiece known for its challenging turtleback greens and strategic bunkering."
-      weatherLocation="Pinehurst,NC"
-      oddsData={oddsData}
-    />
-  );
+  return <BaseTournamentPage {...tournamentData} />;
 };
 
 export default USOpenPage; 

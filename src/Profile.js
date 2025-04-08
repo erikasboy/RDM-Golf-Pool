@@ -4,6 +4,18 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { doc, getDoc, updateDoc, collection, getDocs } from "firebase/firestore";
 import './Profile.css';
 
+// Add tournament configurations
+const TOURNAMENTS = {
+  'masters-2025': {
+    name: 'The Masters',
+    date: '2025-04-10'
+  },
+  'tpc-2025': {
+    name: 'TPC Sawgrass',
+    date: '2025-03-13'
+  }
+};
+
 const Profile = () => {
   const [user, setUser] = useState(null);
   const [profilePic, setProfilePic] = useState(null);
@@ -58,21 +70,42 @@ const Profile = () => {
           const picksRef = collection(db, 'users', user.uid, 'picks');
           const picksSnapshot = await getDocs(picksRef);
           
+          console.log("Fetched picks snapshot:", picksSnapshot.size, "documents");
+          
           const picksData = [];
           
           picksSnapshot.forEach(doc => {
             const data = doc.data();
-            if (data.golfers && data.tournamentName && data.tournamentDate) {
+            console.log("Pick document data:", doc.id, data);
+            
+            // Get tournament info from our config
+            const tournamentInfo = TOURNAMENTS[data.tournamentId];
+            
+            if (data.golfers && tournamentInfo) {
+              console.log("Valid pick found:", {
+                tournamentName: tournamentInfo.name,
+                tournamentDate: tournamentInfo.date,
+                golfersCount: data.golfers.length,
+                firstGolfer: data.golfers[0]
+              });
+              
               picksData.push({
-                tournamentName: data.tournamentName,
-                tournamentDate: data.tournamentDate,
+                tournamentName: tournamentInfo.name,
+                tournamentDate: tournamentInfo.date,
                 golfers: data.golfers
+              });
+            } else {
+              console.log("Invalid pick data (missing required fields):", {
+                hasGolfers: !!data.golfers,
+                hasTournamentInfo: !!tournamentInfo,
+                documentId: doc.id
               });
             }
           });
 
           // Sort picks by tournament date (newest first)
           picksData.sort((a, b) => new Date(b.tournamentDate) - new Date(a.tournamentDate));
+          console.log("Final picks data:", picksData);
           setTournamentPicks(picksData);
         }
       } catch (error) {
@@ -298,8 +331,10 @@ const Profile = () => {
                     <div className="golfers-list">
                       {tournament.golfers.map((golfer, golferIndex) => (
                         <div key={golferIndex} className="golfer-pick">
-                          <span className="golfer-name">{golfer.name}</span>
-                          <span className="golfer-odds">+{golfer.odds}</span>
+                          <span className="golfer-name">{golfer.Name || golfer.name}</span>
+                          {golfer.OddsToWin || golfer.Odds || golfer.OddsWin ? (
+                            <span className="golfer-odds">+{golfer.OddsToWin || golfer.Odds || golfer.OddsWin}</span>
+                          ) : null}
                         </div>
                       ))}
                     </div>

@@ -13,6 +13,7 @@ import NextWeekendPage from "./components/NextWeekendPage";
 import PGAPage from "./components/PGAPage";
 import USOpenPage from "./components/USOpenPage";
 import OpenPage from "./components/OpenPage";
+import TPCPage from "./components/TPCPage";
 import AdminPermissionTest from "./components/AdminPermissionTest";
 
 // Debug overlay component
@@ -272,6 +273,7 @@ function App() {
             <Route path="/tournaments/pga" element={<PGAPage />} />
             <Route path="/tournaments/us-open" element={<USOpenPage />} />
             <Route path="/tournaments/open" element={<OpenPage />} />
+            <Route path="/tournaments/tpc" element={<TPCPage />} />
             <Route path="/tournaments/:id" element={<TournamentPage />} />
             <Route
               path="/admin-test"
