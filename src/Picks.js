@@ -118,141 +118,84 @@ const Picks = () => {
     };
 
     const processTournaments = async (tournaments) => {
-      // Find the tournament that matches our name and is closest to our target date
-      const targetStart = new Date(currentTournament.startDate);
-      const targetName = currentTournament.name.toLowerCase().replace(/[^a-z0-9]+/g, '');
+      // Log all tournaments from the API with more detail
+      console.log("All tournaments from API (detailed):", tournaments.map(t => ({
+        name: t.Name,
+        id: t.TournamentID,
+        startDate: t.StartDate || t.Day,
+        raw: t
+      })));
+      
+      // Find the tournament by ID - convert both to numbers for comparison
+      const matchingTournament = tournaments.find(t => t.TournamentID === Number(currentTournament.tournamentId));
       
       console.log("Looking for tournament:", {
-        targetName,
-        targetStart: targetStart.toISOString()
-      });
-      
-      // Sort tournaments by how close they are to our target date
-      const sortedTournaments = tournaments
-        .filter(t => {
-          const tournamentName = (t.Name || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
-          const isMatch = tournamentName.includes(targetName) || targetName.includes(tournamentName);
-          if (isMatch) {
-            console.log("Found name match:", {
-              apiName: t.Name,
-              normalizedApiName: tournamentName,
-              ourName: targetName
-            });
-          }
-          return isMatch;
-        })
-        .map(t => ({
-          ...t,
-          startDate: new Date(t.StartDate || t.Day),
-          dateDiff: Math.abs(new Date(t.StartDate || t.Day).getTime() - targetStart.getTime())
+        tournamentId: currentTournament.tournamentId,
+        tournamentIdAsNumber: Number(currentTournament.tournamentId),
+        ourTournamentName: currentTournament.name,
+        tournamentIdType: typeof currentTournament.tournamentId,
+        firstFewTournamentIds: tournaments.slice(0, 3).map(t => ({
+          id: t.TournamentID,
+          type: typeof t.TournamentID
         }))
-        .sort((a, b) => a.dateDiff - b.dateDiff);
-
-      console.log("Matching tournaments found:", sortedTournaments.length);
-
-      const matchingTournament = sortedTournaments[0];
+      });
 
       if (!matchingTournament) {
-        throw new Error(`No matching tournament found for ${currentTournament.name}`);
+        throw new Error(`No matching tournament found for ${currentTournament.name} (ID: ${currentTournament.tournamentId})`);
       }
 
       console.log("Found matching tournament:", {
         name: matchingTournament.Name,
         id: matchingTournament.TournamentID,
-        start: matchingTournament.startDate,
-        apiResponse: matchingTournament
+        start: matchingTournament.StartDate || matchingTournament.Day
       });
       
       // Try different API endpoints for players
       const endpoints = [
-        `/TournamentOdds/${matchingTournament.TournamentID}`,
-        `/Odds/Tournament/${matchingTournament.TournamentID}`,
-        `/PlayerTournamentOdds/${matchingTournament.TournamentID}`,
-        `/Players/Tournament/${matchingTournament.TournamentID}`,
-        `/PlayerTournamentProjectionStats/${matchingTournament.TournamentID}`,
-        `/Leaderboard/${matchingTournament.TournamentID}`
+        `/api/field?tournament=${matchingTournament.TournamentID}`,
+        `/api/golf?endpoint=/TournamentField/${matchingTournament.TournamentID}`,
+        `/api/golf?endpoint=/Players/Tournament/${matchingTournament.TournamentID}`,
+        `/api/golf?endpoint=/Leaderboard/${matchingTournament.TournamentID}`
       ];
 
+      // Try each endpoint until we get a successful response
       for (const endpoint of endpoints) {
-        const url = `/api/golf?endpoint=${endpoint}`;
-        console.log("Trying endpoint:", url);
-        
-        const response = await fetch(url);
-        console.log("Response status:", response.status, "for endpoint:", endpoint);
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Raw data from endpoint:', endpoint, data);
-
-          // Log the first player to see available fields
-          if (Array.isArray(data) && data.length > 0) {
-            const samplePlayer = data[0];
-            console.log('Available fields from endpoint:', endpoint, {
-              allFields: Object.keys(samplePlayer),
-              odds: samplePlayer.Odds,
-              oddsToWin: samplePlayer.OddsToWin,
-              oddsWin: samplePlayer.OddsWin,
-              moneyLine: samplePlayer.MoneyLine,
-              raw: samplePlayer
-            });
-          }
-
-          let playersArray;
-          if (Array.isArray(data)) {
-            playersArray = data;
-          } else if (data.Players && Array.isArray(data.Players)) {
-            playersArray = data.Players;
-          } else if (data.Tournament && data.Tournament.Players) {
-            playersArray = data.Tournament.Players;
-          } else {
-            console.log("Unexpected data format:", data);
-            continue; // Try next endpoint
-          }
+        try {
+          console.log("Trying endpoint:", endpoint);
           
-          // Log detailed information for the first player to see all available fields
-          if (playersArray.length > 0) {
-            console.log("Detailed player fields example:", {
-              player: playersArray[0],
-              allFields: Object.keys(playersArray[0]),
-              fantasyPoints: playersArray[0].FantasyPoints
-            });
-          }
+          const response = await fetch(endpoint);
+          console.log("Response status:", response.status);
           
-          // Find potential replacements for Jon Rahm
-          const potentialReplacements = [
-            "Viktor Hovland",
-            "Xander Schauffele",
-            "Wyndham Clark",
-            "Patrick Cantlay",
-            "Max Homa"
-          ];
-          
-          console.log("Looking for potential replacements:");
-          potentialReplacements.forEach(name => {
-            const golfer = playersArray.find(p => p.Name === name);
-            if (golfer) {
-              console.log(`Found ${name}:`, {
-                id: golfer.PlayerID,
-                name: golfer.Name,
-                data: golfer
-              });
+          if (response.ok) {
+            const data = await response.json();
+            console.log("Successfully fetched data from:", endpoint);
+            
+            // Check if data is an array or has a players property
+            let players = [];
+            if (Array.isArray(data)) {
+              players = data;
+            } else if (data.Players && Array.isArray(data.Players)) {
+              players = data.Players;
+            } else if (data.Tournament && data.Tournament.Players) {
+              players = data.Tournament.Players;
+            } else if (data.PlayerTournamentBasic && Array.isArray(data.PlayerTournamentBasic)) {
+              players = data.PlayerTournamentBasic;
             }
-          });
-          
-          if (playersArray.length > 0) {
-            // Sort players by name for easier debugging
-            const sortedPlayers = [...playersArray].sort((a, b) => (a.Name || '').localeCompare(b.Name || ''));
-            console.log("Sorted players:", sortedPlayers);
-            setGolfers(sortedPlayers);
-            setError(null);
-
-            return; // Success!
+            
+            if (players.length > 0) {
+              console.log(`Found ${players.length} players`);
+              setGolfers(players);
+              return;
+            }
           }
+        } catch (error) {
+          console.error("Error fetching from endpoint:", endpoint, error);
+          continue;
         }
       }
-      
+
       // If we get here, none of the endpoints worked
-      throw new Error("Could not fetch players from any endpoint");
+      throw new Error("Failed to fetch tournament data from any endpoint");
     };
 
     setLoading(true);
@@ -429,28 +372,24 @@ const Picks = () => {
     }
   };
 
-  // Add test picks for debugging
-  const handleAddTestPicks = async () => {
-    console.log("handleAddTestPicks called");
-    if (!user) {
-      console.log("No user found, cannot add test picks");
-      alert("Please log in first");
+  // Function to clear a selected golfer
+  const handleClearGolfer = (index) => {
+    if (tournamentLocked) {
+      alert("Tournament picks are locked!");
       return;
     }
     
-    console.log("Adding test picks for user:", user.uid);
-    const success = await addTestPicks(user.uid);
-    console.log("addTestPicks result:", success);
-    
-    if (success) {
-      alert("Test picks added! Please refresh the page.");
-    } else {
-      alert("Error adding test picks");
-    }
+    const newSelectedGolfers = [...selectedGolfers];
+    newSelectedGolfers[index] = null;
+    setSelectedGolfers(newSelectedGolfers);
   };
 
   // Function to sort golfers based on selected option
   const getSortedGolfers = () => {
+    if (!golfers || golfers.length === 0) {
+      return [];
+    }
+    
     return [...golfers].sort((a, b) => {
       switch (sortOption) {
         case 'firstNameAsc':
@@ -497,14 +436,6 @@ const Picks = () => {
             {JSON.stringify(currentTournament, null, 2)}
           </pre>
         </div>
-        {process.env.NODE_ENV === 'development' && (
-          <button
-            onClick={handleAddTestPicks}
-            className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
-          >
-            Add Test Picks (Debug)
-          </button>
-        )}
       </div>
     );
   }
@@ -529,17 +460,7 @@ const Picks = () => {
                 <li>Picks lock when the tournament begins</li>
               </ul>
             </div>
-      </div>
-
-          {/* Debug Button */}
-          {process.env.NODE_ENV === 'development' && (
-            <button
-              onClick={handleAddTestPicks}
-              className="mb-4 bg-blue-500 text-white px-4 py-2 rounded"
-            >
-              Add Test Picks (Debug)
-            </button>
-          )}
+          </div>
 
           {/* Sort Options */}
           <div className="mb-4">
@@ -557,38 +478,45 @@ const Picks = () => {
 
           {/* Golfers Grid - Responsive columns */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 lg:gap-4 mb-6 lg:mb-8">
-            {getSortedGolfers().map((golfer) => {
-              const golferId = String(golfer.PlayerID || golfer.PlayerId);
-              const isUsed = usedGolfers.some(id => String(id) === golferId);
-              const isSelected = selectedGolfers.some(g => String(g.PlayerID || g.PlayerId) === golferId);
-              
-              return (
-                <div
-                  key={golferId}
-                  className={`bg-green-800 p-3 lg:p-4 rounded-lg shadow-lg ${isUsed ? 'opacity-50' : ''}`}
-                >
-                  <h2 className="text-lg lg:text-xl font-bold">{golfer.Name}</h2>
-                  {oddsData[golfer.Name] && (
-                    <div className="text-xs lg:text-sm text-gray-300 mt-1">
-                      {oddsData[golfer.Name].oddsDescription && (
-                        <p>Odds to win: {oddsData[golfer.Name].oddsDescription}</p>
-                      )}
-                    </div>
-                  )}
-                  <button
-                    onClick={() => handleGolferSelection(golfer)}
-                    disabled={tournamentLocked || isUsed || isSelected}
-                    className={`w-full bg-gold-500 text-green-900 px-3 lg:px-4 py-2 rounded-lg mt-2 text-sm lg:text-base ${
-                      (tournamentLocked || isUsed || isSelected) ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
+            {golfers && golfers.length > 0 ? (
+              getSortedGolfers().map((golfer) => {
+                const golferId = String(golfer.PlayerID || golfer.PlayerId);
+                const isUsed = usedGolfers.some(id => String(id) === golferId);
+                const isSelected = selectedGolfers.some(g => String(g.PlayerID || g.PlayerId) === golferId);
+                
+                return (
+                  <div
+                    key={golferId}
+                    className={`bg-green-800 p-3 lg:p-4 rounded-lg shadow-lg ${isUsed ? 'opacity-50' : ''}`}
                   >
-                    {isSelected ? "Selected" : isUsed ? "Already Used" : "Select Golfer"}
-                  </button>
-                </div>
-              );
-            })}
+                    <h2 className="text-lg lg:text-xl font-bold">{golfer.Name}</h2>
+                    {oddsData[golfer.Name] && (
+                      <div className="text-xs lg:text-sm text-gray-300 mt-1">
+                        {oddsData[golfer.Name].oddsDescription && (
+                          <p>Odds to win: {oddsData[golfer.Name].oddsDescription}</p>
+                        )}
+                      </div>
+                    )}
+                    <button
+                      onClick={() => handleGolferSelection(golfer)}
+                      disabled={tournamentLocked || isUsed || isSelected}
+                      className={`w-full bg-gold-500 text-green-900 px-3 lg:px-4 py-2 rounded-lg mt-2 text-sm lg:text-base ${
+                        (tournamentLocked || isUsed || isSelected) ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      {isSelected ? "Selected" : isUsed ? "Already Used" : "Select Golfer"}
+                    </button>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="col-span-full text-center py-8">
+                <p className="text-xl">No golfers available for this tournament.</p>
+                <p className="text-sm mt-2">Please try again later or contact support if the issue persists.</p>
+              </div>
+            )}
           </div>
-      </div>
+        </div>
 
         {/* Right Sidebar - Moves to bottom on mobile */}
         <div className="w-full lg:w-96 bg-green-800 p-4 lg:p-6 border-t lg:border-l lg:border-t-0 border-green-700">
@@ -604,35 +532,48 @@ const Picks = () => {
                 >
                   {selectedGolfers[index] ? (
                     <>
-                      <h3 className="text-base lg:text-lg font-bold">{selectedGolfers[index].Name}</h3>
-                      {oddsData[selectedGolfers[index].Name] && (
-                        <div className="text-xs lg:text-sm text-gray-300 mt-1">
-                          {oddsData[selectedGolfers[index].Name].oddsDescription && (
-                            <p>Odds to win: {oddsData[selectedGolfers[index].Name].oddsDescription}</p>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="text-base lg:text-lg font-bold">{selectedGolfers[index].Name}</h3>
+                          {oddsData[selectedGolfers[index].Name] && (
+                            <div className="text-xs lg:text-sm text-gray-300 mt-1">
+                              {oddsData[selectedGolfers[index].Name].oddsDescription && (
+                                <p>Odds to win: {oddsData[selectedGolfers[index].Name].oddsDescription}</p>
+                              )}
+                            </div>
                           )}
                         </div>
-                      )}
+                        <button 
+                          onClick={() => handleClearGolfer(index)}
+                          disabled={tournamentLocked}
+                          className={`text-red-400 hover:text-red-300 ${tournamentLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                      </div>
                     </>
                   ) : (
                     <p className="text-green-500 text-sm lg:text-base">Golfer slot {index + 1}</p>
                   )}
-          </div>
-        ))}
+                </div>
+              ))}
             </div>
-        <button
-          onClick={handleSubmitPicks}
-              disabled={tournamentLocked || selectedGolfers.length !== 4}
+            <button
+              onClick={handleSubmitPicks}
+              disabled={tournamentLocked || selectedGolfers.filter(Boolean).length !== 4}
               className={`w-full bg-gold-500 text-green-900 px-4 py-2 rounded-lg mt-4 text-sm lg:text-base ${
-                (tournamentLocked || selectedGolfers.length !== 4) ? "opacity-50 cursor-not-allowed" : ""
-          }`}
-        >
-          Submit Picks
-        </button>
+                (tournamentLocked || selectedGolfers.filter(Boolean).length !== 4) ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            >
+              Submit Picks
+            </button>
             {tournamentLocked ? (
               <p className="text-red-500 mt-2 text-center text-sm lg:text-base">Picks locked for current tournament</p>
             ) : (
               <p className="text-green-500 mt-2 text-center text-sm lg:text-base">
-                {4 - selectedGolfers.length} picks remaining
+                {4 - selectedGolfers.filter(Boolean).length} picks remaining
               </p>
             )}
           </div>

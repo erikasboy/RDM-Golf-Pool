@@ -33,7 +33,7 @@ const TournamentPage = () => {
     const fetchTournamentData = async () => {
       try {
         // Get the current tournament (The Players Championship)
-        const currentTournamentUrl = `https://api.sportsdata.io/golf/v2/json/LeaderboardBasic/654?key=${process.env.NEXT_PUBLIC_SPORTDATA_API_KEY}`;
+        const currentTournamentUrl = `/api/golf?endpoint=/LeaderboardBasic/654`;
         console.log('Fetching current tournament data from:', currentTournamentUrl);
         
         const currentResponse = await fetch(currentTournamentUrl);

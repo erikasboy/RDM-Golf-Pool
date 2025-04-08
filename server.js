@@ -237,6 +237,7 @@ app.get('/api/field', async (req, res) => {
   try {
     // Try different API endpoints for players
     const endpoints = [
+      `/PlayerTournamentBasic/${tournamentId}`,  // Add this as the first option
       `/TournamentField/${tournamentId}`,
       `/Players/Tournament/${tournamentId}`,
       `/Leaderboard/${tournamentId}`
@@ -266,6 +267,8 @@ app.get('/api/field', async (req, res) => {
         players = data.Players;
       } else if (data.Tournament && data.Tournament.Players) {
         players = data.Tournament.Players;
+      } else if (data.PlayerTournamentBasic && Array.isArray(data.PlayerTournamentBasic)) {
+        players = data.PlayerTournamentBasic;
       }
 
       if (players.length > 0) {
@@ -278,7 +281,11 @@ app.get('/api/field', async (req, res) => {
             PlayerID: player.PlayerID,
             Name: player.Name,
             Country: player.Country || null,
-            PhotoURI: player.PhotoURI || null
+            PhotoURI: player.PhotoURI || null,
+            OddsToWin: player.OddsToWin || null,
+            Odds: player.Odds || null,
+            OddsWin: player.OddsWin || null,
+            MoneyLine: player.MoneyLine || null
           }))
           .sort((a, b) => a.Name.localeCompare(b.Name));
         
@@ -299,6 +306,15 @@ app.get('/api/field', async (req, res) => {
   }
 });
 
+// Add this before the odds endpoint
+const tournamentSportKeys = {
+  '628': 'golf_masters_tournament_winner',      // Masters Tournament
+  '629': 'golf_pga_championship_winner',        // PGA Championship
+  '630': 'golf_us_open_winner',                 // U.S. Open
+  '642': 'golf_the_open_championship_winner',   // The Open Championship
+  // TPC (654) has no odds available
+};
+
 // Odds API endpoint
 app.get('/api/odds', async (req, res) => {
   console.log('Odds API endpoint called');
@@ -310,6 +326,13 @@ app.get('/api/odds', async (req, res) => {
     return res.status(400).json({ error: 'Tournament ID is required' });
   }
 
+  // Check if this tournament has odds available
+  const sportKey = tournamentSportKeys[tournamentId];
+  if (!sportKey) {
+    console.log(`No odds available for tournament ${tournamentId}`);
+    return res.json({ odds: [] });
+  }
+
   const apiKey = process.env.REACT_APP_ODDS_API_KEY;
   console.log('Odds API Key available:', apiKey ? 'Yes' : 'No');
   
@@ -319,24 +342,8 @@ app.get('/api/odds', async (req, res) => {
   }
 
   try {
-    // First, get the tournament name from the tournament ID
-    const tournamentUrl = `https://api.sportsdata.io/golf/v2/json/Tournament/${tournamentId}?key=${process.env.REACT_APP_SPORTDATA_API_KEY}`;
-    console.log('Fetching tournament details from:', tournamentUrl.replace(process.env.REACT_APP_SPORTDATA_API_KEY, '[REDACTED]'));
-    
-    const tournamentResponse = await fetch(tournamentUrl);
-    if (!tournamentResponse.ok) {
-      const errorText = await tournamentResponse.text();
-      console.error('Tournament API error response:', errorText);
-      return res.status(tournamentResponse.status).json({ 
-        error: `Tournament API request failed with status ${tournamentResponse.status}: ${errorText}` 
-      });
-    }
-    
-    const tournamentData = await tournamentResponse.json();
-    console.log('Tournament data:', JSON.stringify(tournamentData).substring(0, 200));
-    
-    // Now fetch the odds data from The Odds API
-    const oddsUrl = `https://api.the-odds-api.com/v4/sports/golf_tournament/odds/?apiKey=${apiKey}&regions=us`;
+    // Fetch the odds data from The Odds API using the correct sport key
+    const oddsUrl = `https://api.the-odds-api.com/v4/sports/${sportKey}/odds/?apiKey=${apiKey}&regions=us`;
     console.log('Fetching odds from:', oddsUrl.replace(apiKey, '[REDACTED]'));
     
     const oddsResponse = await fetch(oddsUrl);
@@ -353,32 +360,36 @@ app.get('/api/odds', async (req, res) => {
     const oddsData = await oddsResponse.json();
     console.log('Odds data:', JSON.stringify(oddsData).substring(0, 200));
     
-    // Find the matching tournament in the odds data
-    const tournamentName = tournamentData.Name;
-    console.log('Looking for tournament:', tournamentName);
-    
-    const matchingTournament = oddsData.find(t => 
-      t.title.toLowerCase().includes(tournamentName.toLowerCase()) || 
-      tournamentName.toLowerCase().includes(t.title.toLowerCase())
-    );
-    
-    if (!matchingTournament) {
-      console.log('No matching tournament found in odds data');
-      return res.json({ odds: [] });
+    // Extract the odds for each player with defensive programming
+    let odds = [];
+    if (oddsData && Array.isArray(oddsData)) {
+      // Create a map to store the best odds for each player
+      const playerOddsMap = new Map();
+      
+      oddsData
+        .filter(t => t && t.bookmakers && Array.isArray(t.bookmakers))
+        .flatMap(t => t.bookmakers)
+        .filter(b => b && b.markets && Array.isArray(b.markets))
+        .flatMap(b => b.markets)
+        .filter(m => m && m.outcomes && Array.isArray(m.outcomes))
+        .flatMap(m => m.outcomes)
+        .filter(o => o && o.name && typeof o.price !== 'undefined')
+        .forEach(o => {
+          // If player doesn't exist in map or has worse odds, update with better odds
+          if (!playerOddsMap.has(o.name) || playerOddsMap.get(o.name).odds > o.price) {
+            playerOddsMap.set(o.name, {
+              name: o.name,
+              odds: o.price
+            });
+          }
+        });
+      
+      // Convert map to array and sort by odds
+      odds = Array.from(playerOddsMap.values())
+        .sort((a, b) => a.odds - b.odds);
     }
     
-    console.log('Found matching tournament:', matchingTournament.title);
-    
-    // Extract the odds for each player
-    const odds = matchingTournament.bookmakers
-      .flatMap(b => b.markets)
-      .flatMap(m => m.outcomes)
-      .map(o => ({
-        name: o.name,
-        odds: o.price
-      }));
-    
-    console.log(`Found ${odds.length} player odds`);
+    console.log(`Found ${odds.length} unique player odds`);
     if (odds.length > 0) {
       console.log('Sample odds:', odds[0]);
     }

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Link, NavLink } from "react-router-dom";
 import { getAuth, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { getFirestore, doc, getDoc } from "firebase/firestore";
 import { signInWithGoogle } from "./firebase";
 import Profile from "./Profile";
 import Picks from "./Picks";
+import HomePage from "./components/HomePage";
 import TournamentPage from "./components/TournamentPage";
 import MastersPage from "./components/MastersPage";
 import TournamentsPage from "./components/TournamentsPage";
@@ -11,6 +13,7 @@ import NextWeekendPage from "./components/NextWeekendPage";
 import PGAPage from "./components/PGAPage";
 import USOpenPage from "./components/USOpenPage";
 import OpenPage from "./components/OpenPage";
+import AdminPermissionTest from "./components/AdminPermissionTest";
 
 // Debug overlay component
 const DebugOverlay = ({ logs }) => {
@@ -43,12 +46,12 @@ const DebugOverlay = ({ logs }) => {
     <div className="fixed bottom-0 right-0 z-50">
       <button
         onClick={() => setIsVisible(!isVisible)}
-        className="bg-gray-800 text-white px-3 py-1 rounded-tl-lg text-sm"
+        className="bg-[#215127] text-white px-3 py-1 rounded-tl-lg text-sm"
       >
         {isVisible ? 'Hide Debug' : 'Show Debug'}
       </button>
       {isVisible && (
-        <div className="bg-gray-900 text-white p-4 w-full md:w-96 h-[80vh] md:h-[60vh] overflow-auto text-base font-mono absolute bottom-full right-0 mb-2">
+        <div className="bg-[#215127] text-white p-4 w-full md:w-96 h-[80vh] md:h-[60vh] overflow-auto text-base font-mono absolute bottom-full right-0 mb-2">
           <div className="flex justify-between items-center mb-2">
             <div className="font-bold text-lg">Debug Logs:</div>
             <button
@@ -60,7 +63,7 @@ const DebugOverlay = ({ logs }) => {
           </div>
           <div className="space-y-2">
             {logs.map((log, index) => (
-              <div key={index} className="p-2 hover:bg-gray-800 rounded break-words">
+              <div key={index} className="p-2 hover:bg-[#2a6a33] rounded break-words">
                 {log}
               </div>
             ))}
@@ -79,6 +82,7 @@ function App() {
   const [authError, setAuthError] = useState(null);
   const [authMessage, setAuthMessage] = useState("");
   const [debugLogs, setDebugLogs] = useState([]);
+  const [isAdmin, setIsAdmin] = useState(false);
   const auth = getAuth();
 
   // Debug logging function
@@ -95,9 +99,19 @@ function App() {
 
   useEffect(() => {
     console.log('Setting up auth state listener...');
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       console.log(`Auth state changed: ${user ? `User: ${user.email}` : 'No user'}`);
       setUser(user);
+      
+      if (user) {
+        // Check if user is admin
+        const db = getFirestore();
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        setIsAdmin(userDoc.exists() && userDoc.data().role === 'admin');
+      } else {
+        setIsAdmin(false);
+      }
+      
       setLoading(false);
     });
 
@@ -162,79 +176,119 @@ function App() {
 
   return (
     <Router>
-      <div className="min-h-screen">
-        {user ? (
-          <>
-            <nav className="nav-bar">
-              <div className="nav-container">
-                <div className="nav-logo">
-                  <h1>Golf Pool App</h1>
-                </div>
-                <div className="nav-links">
-                  <Link to="/profile">Profile</Link>
-                  <Link to="/picks">Picks</Link>
-                  <Link to="/tournaments">Tournaments</Link>
-                  <Link to="/rules">Rules/FAQ</Link>
-                  <button onClick={handleLogout} className="logout-button">
+      <div className="min-h-screen bg-[#215127] text-white">
+        <nav className="bg-[#215127] p-4">
+          <div className="container mx-auto flex justify-between items-center">
+            <Link to="/" className="text-xl font-bold font-['Roboto_Slab'] uppercase">
+              Golf Pool App
+            </Link>
+            <div className="flex items-center space-x-4">
+              {user ? (
+                <>
+                  <NavLink 
+                    to="/profile" 
+                    className={({ isActive }) => 
+                      isActive 
+                        ? "text-[var(--color-gold)] font-['Roboto_Slab'] uppercase" 
+                        : "hover:text-gray-300 font-['Roboto_Slab'] uppercase"
+                    }
+                  >
+                    Profile
+                  </NavLink>
+                  <NavLink 
+                    to="/picks" 
+                    className={({ isActive }) => 
+                      isActive 
+                        ? "text-[var(--color-gold)] font-['Roboto_Slab'] uppercase" 
+                        : "hover:text-gray-300 font-['Roboto_Slab'] uppercase"
+                    }
+                  >
+                    My Picks
+                  </NavLink>
+                  <NavLink 
+                    to="/tournaments" 
+                    className={({ isActive }) => 
+                      isActive 
+                        ? "text-[var(--color-gold)] font-['Roboto_Slab'] uppercase" 
+                        : "hover:text-gray-300 font-['Roboto_Slab'] uppercase"
+                    }
+                  >
+                    Tournaments
+                  </NavLink>
+                  <button
+                    onClick={handleLogout}
+                    className="bg-[var(--color-gold)] hover:bg-[#e6c200] px-4 py-2 rounded-[4px] font-['Roboto_Slab'] uppercase text-black"
+                  >
                     Logout
                   </button>
-                </div>
-              </div>
-            </nav>
-
-            <Routes>
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/picks" element={<Picks />} />
-              <Route path="/tournaments" element={<TournamentsPage />} />
-              <Route path="/tournaments/next-weekend" element={<NextWeekendPage />} />
-              <Route path="/tournaments/masters" element={<MastersPage />} />
-              <Route path="/tournaments/pga" element={<PGAPage />} />
-              <Route path="/tournaments/us-open" element={<USOpenPage />} />
-              <Route path="/tournaments/open" element={<OpenPage />} />
-              <Route path="/rules" element={<div className="card">Rules/FAQ Page Coming Soon</div>} />
-              <Route path="*" element={<Profile />} />
-            </Routes>
-          </>
-        ) : (
-          <div className="flex items-center justify-center h-screen">
-            <div className="card w-full max-w-md mx-4">
-              <h1 className="mb-4">Welcome to the Golf Pool App</h1>
-              {authError && (
-                <div className="error mb-4">
-                  <p>{authError}</p>
+                </>
+              ) : (
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={handleGoogleLogin}
+                    className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-[4px] font-['Roboto_Slab'] uppercase"
+                  >
+                    Sign in with Google
+                  </button>
+                  <form onSubmit={handleEmailLogin} className="flex space-x-4">
+                    <input
+                      type="email"
+                      placeholder="Email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="px-4 py-2 rounded-[4px] bg-gray-700"
+                    />
+                    <input
+                      type="password"
+                      placeholder="Password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="px-4 py-2 rounded-[4px] bg-gray-700"
+                    />
+                    <button
+                      type="submit"
+                      className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-[4px] font-['Roboto_Slab'] uppercase"
+                    >
+                      Login
+                    </button>
+                  </form>
                 </div>
               )}
-              <form onSubmit={handleEmailLogin} className="mb-4">
-                <input
-                  type="email"
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full p-2 mb-4 rounded-lg text-black"
-                />
-                <input
-                  type="password"
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full p-2 mb-4 rounded-lg text-black"
-                />
-                <button
-                  type="submit"
-                  className="primary-button w-full"
-                >
-                  Login with Email
-                </button>
-              </form>
-              <button
-                onClick={handleGoogleLogin}
-                className="primary-button w-full"
-              >
-                Login with Google
-              </button>
             </div>
           </div>
-        )}
+        </nav>
+
+        <main className="container mx-auto p-4">
+          <Routes>
+            <Route
+              path="/"
+              element={user ? <HomePage /> : <div>Please log in to view the pool standings.</div>}
+            />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/picks" element={<Picks />} />
+            <Route path="/tournaments" element={<TournamentsPage />} />
+            <Route path="/tournaments/next-weekend" element={<NextWeekendPage />} />
+            <Route path="/tournaments/masters" element={<MastersPage />} />
+            <Route path="/tournaments/pga" element={<PGAPage />} />
+            <Route path="/tournaments/us-open" element={<USOpenPage />} />
+            <Route path="/tournaments/open" element={<OpenPage />} />
+            <Route path="/tournaments/:id" element={<TournamentPage />} />
+            <Route
+              path="/admin-test"
+              element={
+                isAdmin ? (
+                  <AdminPermissionTest />
+                ) : (
+                  <div className="text-center p-4">
+                    <h2 className="text-xl font-bold mb-2">Access Denied</h2>
+                    <p>You must be an admin to access this page.</p>
+                  </div>
+                )
+              }
+            />
+          </Routes>
+        </main>
+
         <DebugOverlay logs={debugLogs} />
       </div>
     </Router>

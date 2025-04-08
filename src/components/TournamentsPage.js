@@ -21,7 +21,7 @@ const formatDate = (dateString) => {
 
 const tournaments = [
   {
-    id: '654',
+    id: '628',
     name: 'The Masters Tournament',
     startDate: '2025-04-11',
     endDate: '2025-04-14',
@@ -31,7 +31,7 @@ const tournaments = [
     path: '/tournaments/masters'
   },
   {
-    id: '655',
+    id: '629',
     name: 'PGA Championship',
     startDate: '2025-05-16',
     endDate: '2025-05-19',
@@ -41,7 +41,7 @@ const tournaments = [
     path: '/tournaments/pga'
   },
   {
-    id: '656',
+    id: '630',
     name: 'U.S. Open',
     startDate: '2025-06-13',
     endDate: '2025-06-16',
@@ -51,13 +51,13 @@ const tournaments = [
     path: '/tournaments/us-open'
   },
   {
-    id: '657',
+    id: '642',
     name: 'The Open Championship',
     startDate: '2025-07-18',
     endDate: '2025-07-21',
     venue: 'Royal Troon Golf Club',
     location: 'Troon, Scotland',
-    description: 'The Open Championship, golf\'s oldest major, returns to Royal Troon. Known for its challenging links layout and unpredictable weather conditions.',
+    description: 'The Open Championship, one of golf\'s four major championships, returns to Royal Troon. Known for its links-style course and challenging weather conditions.',
     path: '/tournaments/open'
   }
 ];
@@ -85,6 +85,8 @@ const TournamentsPage = () => {
   const [showAllPlayers, setShowAllPlayers] = useState(false);
   const [nextTournament, setNextTournament] = useState(null);
   const [field, setField] = useState([]);
+  const [odds, setOdds] = useState({});
+  const [tournamentStarted, setTournamentStarted] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -102,7 +104,13 @@ const TournamentsPage = () => {
         const next = sortedTournaments.find(t => new Date(t.startDate) > now);
         setNextTournament(next || sortedTournaments[0]);
 
-        // If the next tournament is not completed, fetch its weather and field
+        // Check if tournament has started
+        if (next) {
+          const startDate = new Date(next.startDate);
+          setTournamentStarted(now >= startDate);
+        }
+
+        // If the next tournament is not completed, fetch its weather and field/leaderboard
         if (next && !next.isCompleted) {
           const weatherUrl = `/api/weather?location=${encodeURIComponent(next.location)}`;
           console.log('Attempting to fetch weather from:', weatherUrl);
@@ -121,26 +129,66 @@ const TournamentsPage = () => {
             }
           }
 
-          // Fetch field data
-          const fieldUrl = `/api/field?tournament=${next.id}`;
-          console.log('Attempting to fetch field from:', fieldUrl);
-          const fieldResponse = await fetch(fieldUrl);
-          console.log('Field response status:', fieldResponse.status);
+          // Fetch field or leaderboard data based on tournament status
+          if (!tournamentStarted) {
+            // Fetch field data
+            const fieldUrl = `/api/field?tournament=${next.id}`;
+            console.log('Attempting to fetch field from:', fieldUrl);
+            const fieldResponse = await fetch(fieldUrl);
+            console.log('Field response status:', fieldResponse.status);
 
-          if (fieldResponse.ok) {
-            const fieldText = await fieldResponse.text();
-            console.log('Raw field response:', fieldText);
-            try {
-              const fieldData = JSON.parse(fieldText);
-              console.log('Parsed field data:', fieldData);
-              setField(fieldData);
-            } catch (parseError) {
-              console.error('Error parsing field data:', parseError);
+            if (fieldResponse.ok) {
+              const fieldText = await fieldResponse.text();
+              console.log('Raw field response:', fieldText);
+              try {
+                const fieldData = JSON.parse(fieldText);
+                console.log('Parsed field data:', fieldData);
+                setField(fieldData);
+              } catch (parseError) {
+                console.error('Error parsing field data:', parseError);
+              }
+            }
+
+            // Fetch odds data
+            const oddsUrl = `/api/odds?tournament=${next.id}`;
+            console.log('Attempting to fetch odds from:', oddsUrl);
+            const oddsResponse = await fetch(oddsUrl);
+            console.log('Odds response status:', oddsResponse.status);
+
+            if (oddsResponse.ok) {
+              const oddsText = await oddsResponse.text();
+              console.log('Raw odds response:', oddsText);
+              try {
+                const oddsData = JSON.parse(oddsText);
+                console.log('Parsed odds data:', oddsData);
+                // Convert array of odds to object keyed by player name
+                const oddsMap = {};
+                oddsData.odds.forEach(odd => {
+                  oddsMap[odd.name] = odd.odds;
+                });
+                setOdds(oddsMap);
+              } catch (parseError) {
+                console.error('Error parsing odds data:', parseError);
+              }
             }
           } else {
-            console.error('Field fetch failed:', fieldResponse.status);
-            const errorText = await fieldResponse.text();
-            console.error('Field error response:', errorText);
+            // Fetch leaderboard data
+            const leaderboardUrl = `/api/golf?endpoint=leaderboard&tournament=${next.id}`;
+            console.log('Attempting to fetch leaderboard from:', leaderboardUrl);
+            const leaderboardResponse = await fetch(leaderboardUrl);
+            console.log('Leaderboard response status:', leaderboardResponse.status);
+
+            if (leaderboardResponse.ok) {
+              const leaderboardText = await leaderboardResponse.text();
+              console.log('Raw leaderboard response:', leaderboardText);
+              try {
+                const leaderboardData = JSON.parse(leaderboardText);
+                console.log('Parsed leaderboard data:', leaderboardData);
+                setLeaderboard(leaderboardData);
+              } catch (parseError) {
+                console.error('Error parsing leaderboard data:', parseError);
+              }
+            }
           }
         }
 
@@ -153,7 +201,7 @@ const TournamentsPage = () => {
     };
 
     fetchData();
-  }, []);
+  }, [tournamentStarted]);
 
   const getDisplayRank = (rank, players) => {
     const rankCount = players.filter(p => p.Rank === rank).length;
@@ -190,46 +238,101 @@ const TournamentsPage = () => {
 
           {/* Main Content Area with Weather Sidebar */}
           <div className="main-content">
-            {/* Field Section */}
-            <section className="field-section">
-              <h2>Tournament Field</h2>
-              {field.length > 0 ? (
-                <div className="field-info">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {field.slice(0, showAllPlayers ? field.length : 30).map((player) => (
-                      <div key={player.PlayerID} className="bg-white rounded-lg shadow p-4">
-                        <div className="flex items-center space-x-4">
-                          {player.PhotoURI && (
-                            <img 
-                              src={player.PhotoURI} 
-                              alt={player.Name}
-                              className="w-16 h-16 rounded-full object-cover"
-                              onError={(e) => {
-                                e.target.style.display = 'none';
-                              }}
-                            />
-                          )}
-                          <div className="flex-1">
-                            <div className="font-semibold text-lg text-gray-900">{player.Name}</div>
-                            <div className="text-gray-600">{player.Country || 'N/A'}</div>
+            {/* Field or Leaderboard Section */}
+            {!tournamentStarted ? (
+              <section className="field-section">
+                <h2>Tournament Field</h2>
+                {field.length > 0 ? (
+                  <div className="field-info">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {field
+                        .sort((a, b) => {
+                          const oddsA = odds[a.Name] ? parseFloat(odds[a.Name]) : Infinity;
+                          const oddsB = odds[b.Name] ? parseFloat(odds[b.Name]) : Infinity;
+                          if (oddsA === Infinity && oddsB === Infinity) {
+                            return a.Name.localeCompare(b.Name);
+                          }
+                          return oddsA - oddsB;
+                        })
+                        .slice(0, showAllPlayers ? field.length : 30)
+                        .map((player) => (
+                        <div key={player.PlayerID} className="bg-white rounded-lg shadow p-4">
+                          <div className="flex items-center space-x-4">
+                            {player.PhotoURI && (
+                              <img 
+                                src={player.PhotoURI} 
+                                alt={player.Name}
+                                className="w-16 h-16 rounded-full object-cover"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                }}
+                              />
+                            )}
+                            <div className="flex-1">
+                              <div className="font-semibold text-lg text-gray-900">{player.Name}</div>
+                              <div className="text-gray-600">{player.Country || 'N/A'}</div>
+                              {odds[player.Name] && (
+                                <div className="text-sm text-blue-600 font-medium">
+                                  Odds: {odds[player.Name]}:1
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                    {field.length > 30 && (
+                      <button
+                        onClick={() => setShowAllPlayers(!showAllPlayers)}
+                        className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+                      >
+                        {showAllPlayers ? 'Show Less' : `View All Players (${field.length})`}
+                      </button>
+                    )}
                   </div>
-                  {field.length > 30 && (
-                    <button
-                      onClick={() => setShowAllPlayers(!showAllPlayers)}
-                      className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
-                    >
-                      {showAllPlayers ? 'Show Less' : `View All Players (${field.length})`}
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="text-gray-500">Field information unavailable</div>
-              )}
-            </section>
+                ) : (
+                  <div className="text-gray-500">Field information unavailable</div>
+                )}
+              </section>
+            ) : (
+              <section className="leaderboard-section">
+                <h2>Tournament Leaderboard</h2>
+                {leaderboard ? (
+                  <div className="leaderboard-info">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full bg-white">
+                        <thead>
+                          <tr className="bg-gray-100">
+                            <th className="px-4 py-2 text-left">Rank</th>
+                            <th className="px-4 py-2 text-left">Player</th>
+                            <th className="px-4 py-2 text-center">Total</th>
+                            <th className="px-4 py-2 text-center">Today</th>
+                            <th className="px-4 py-2 text-center">Thru</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {leaderboard.map((player) => (
+                            <tr key={player.PlayerID} className="border-t">
+                              <td className="px-4 py-2">{getDisplayRank(player.Rank, leaderboard)}</td>
+                              <td className="px-4 py-2">
+                                <div className="flex items-center space-x-2">
+                                  <span>{player.Name}</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-2 text-center">{player.TotalScore}</td>
+                              <td className="px-4 py-2 text-center">{player.TodayScore}</td>
+                              <td className="px-4 py-2 text-center">{player.HoleNumber || '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-gray-500">Leaderboard information unavailable</div>
+                )}
+              </section>
+            )}
 
             {/* Weather Section */}
             <section className="weather-section">

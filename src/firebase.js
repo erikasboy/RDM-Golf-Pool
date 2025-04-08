@@ -35,8 +35,8 @@ export const storage = getStorage(app);
 
 // Create Google Auth Provider with custom parameters
 const googleProvider = new GoogleAuthProvider();
-googleProvider.setCustomParameters({
-  prompt: 'select_account',
+    googleProvider.setCustomParameters({
+      prompt: 'select_account',
   // Disable redirect mode
   redirect_uri: null
 });

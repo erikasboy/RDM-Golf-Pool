@@ -1,0 +1,76 @@
+.weather-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 1rem;
+  color: var(--color-gold);
+}
+
+.weather-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.weather-location {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.course-name {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: 'Roboto Slab', serif;
+}
+
+.city-state {
+  font-size: 0.9rem;
+  color: var(--color-gold);
+  font-family: 'Roboto Slab', serif;
+}
+
+.weather-temp {
+  font-size: 2rem;
+  font-weight: bold;
+  font-family: 'Roboto Slab', serif;
+}
+
+.weather-condition {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.weather-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.weather-detail {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.detail-label {
+  font-weight: 500;
+}
+
+.detail-value {
+  color: var(--color-gold);
+}
+
+.weather-loading,
+.weather-error {
+  text-align: center;
+  padding: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.weather-error {
+  color: #ff6b6b;
+} 

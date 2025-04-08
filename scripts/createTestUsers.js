@@ -235,11 +235,11 @@ const main = async () => {
         
         console.log(`Created user: ${participant.firstName} ${participant.lastName}`);
         
-        // Create their pick for the Valspar Championship
+        // Create their pick for The Players Championship
         await createTestPick(
           userId,
-          'Valspar Championship',
-          '2025-03-21',
+          'The Players Championship',
+          '2025-03-13',
           participant.picks
         );
         

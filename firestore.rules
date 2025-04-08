@@ -29,5 +29,22 @@ service cloud.firestore {
       allow create: if isAuthenticated() && request.auth.uid == userId;
       allow update, delete: if isAdmin() || (isAuthenticated() && request.auth.uid == userId);
     }
+
+    // Admin data rules
+    match /adminData/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // UserScores collection rules
+    match /userScores/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Tournaments collection rules
+    match /tournaments/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
   }
 } 
