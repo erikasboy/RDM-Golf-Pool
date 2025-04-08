@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
 require('dotenv').config();
+const admin = require('./config/firebase-admin');
 
 const app = express();
 const port = 3002;
@@ -10,9 +11,8 @@ app.use(cors());
 app.use(express.json());
 
 // Test endpoint
-app.get('/api/test', (req, res) => {
-  console.log('Test endpoint called');
-  res.json({ message: 'API server is working!' });
+app.get('/test', (req, res) => {
+  res.json({ message: 'Test server is working!' });
 });
 
 // Golf API endpoint
@@ -44,6 +44,24 @@ app.get('/api/golf', async (req, res) => {
     }
     const data = await response.json();
     res.json(data);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Firebase Admin test endpoint
+app.get('/test-firebase', async (req, res) => {
+  try {
+    console.log('Testing Firebase Admin connection...');
+    const db = admin.firestore();
+    const testDoc = await db.collection('test').doc('test-doc').get();
+    
+    res.json({
+      success: true,
+      exists: testDoc.exists,
+      data: testDoc.exists ? testDoc.data() : null
+    });
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: error.message });

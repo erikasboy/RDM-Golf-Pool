@@ -26,3 +26,12 @@ yarn-error.log*
 # IDE
 .idea/
 .vscode/
+
+# Firebase service account
+config/serviceAccountKey.json
+
+# Sensitive data
+sensitive-data.txt
+config/
+bfg-repo-cleaner/
+test-firebase-admin.js

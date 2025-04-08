@@ -14,7 +14,8 @@ const Picks = () => {
   const [currentTournament, setCurrentTournament] = useState(null);
   const [usedGolfers, setUsedGolfers] = useState([]);
   const [oddsData, setOddsData] = useState({});
-  const [sortOption, setSortOption] = useState('firstNameAsc');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Calculate odds whenever golfers data changes
   useEffect(() => {
@@ -230,6 +231,9 @@ const Picks = () => {
         const isLocked = new Date() > lockTime;
         setTournamentLocked(isLocked);
 
+        // Initialize selectedGolfers with empty slots
+        setSelectedGolfers([null, null, null, null]);
+
         // Get user and their picks
         const currentUser = auth.currentUser;
         if (currentUser && isMounted) {
@@ -265,7 +269,10 @@ const Picks = () => {
 
             if (tournamentPicks.exists()) {
               const currentPicks = tournamentPicks.data().golfers || [];
-              setSelectedGolfers(currentPicks);
+              // Only load picks if they exist and the tournament isn't locked
+              if (currentPicks.length > 0 && !isLocked) {
+                setSelectedGolfers(currentPicks);
+              }
             }
           } catch (error) {
             if (isMounted) {
@@ -323,12 +330,15 @@ const Picks = () => {
       return;
     }
 
-    if (selectedGolfers.length >= 4) {
+    // Count non-null selected golfers
+    const selectedCount = selectedGolfers.filter(Boolean).length;
+    
+    if (selectedCount >= 4) {
       alert("You can only select 4 golfers.");
       return;
     }
 
-    if (selectedGolfers.some((g) => String(g.PlayerID || g.PlayerId) === golferId)) {
+    if (selectedGolfers.some((g) => g && String(g.PlayerID || g.PlayerId) === golferId)) {
       alert("You've already selected this golfer for this tournament.");
       return;
     }
@@ -338,7 +348,19 @@ const Picks = () => {
       return;
     }
 
-    setSelectedGolfers([...selectedGolfers, golfer]);
+    // Find the first null slot or add to the end
+    const newSelectedGolfers = [...selectedGolfers];
+    const nullIndex = newSelectedGolfers.findIndex(g => g === null);
+    
+    if (nullIndex !== -1) {
+      // Replace the null slot
+      newSelectedGolfers[nullIndex] = golfer;
+    } else {
+      // Add to the end if no null slots
+      newSelectedGolfers.push(golfer);
+    }
+    
+    setSelectedGolfers(newSelectedGolfers);
   };
 
   // Handle submission of picks
@@ -384,34 +406,29 @@ const Picks = () => {
     setSelectedGolfers(newSelectedGolfers);
   };
 
-  // Function to sort golfers based on selected option
+  // Function to get sorted and filtered golfers
   const getSortedGolfers = () => {
     if (!golfers || golfers.length === 0) {
       return [];
     }
     
-    return [...golfers].sort((a, b) => {
-      switch (sortOption) {
-        case 'firstNameAsc':
-          return (a.Name || '').localeCompare(b.Name || '');
-        case 'lastNameAsc':
-          const getLastName = (name) => {
-            const parts = (name || '').split(' ');
-            return parts[parts.length - 1];
-          };
-          return getLastName(a.Name).localeCompare(getLastName(b.Name));
-        case 'oddsAsc':
-          const oddsA = oddsData[a.Name]?.h2h || Number.MAX_VALUE;
-          const oddsB = oddsData[b.Name]?.h2h || Number.MAX_VALUE;
-          return oddsA - oddsB;
-        case 'oddsDesc':
-          const oddsADesc = oddsData[a.Name]?.h2h || 0;
-          const oddsBDesc = oddsData[b.Name]?.h2h || 0;
-          return oddsBDesc - oddsADesc;
-        default:
-          return 0;
-      }
-    });
+    return [...golfers]
+      .filter(golfer => {
+        const searchLower = searchTerm.toLowerCase();
+        return golfer.Name.toLowerCase().includes(searchLower);
+      })
+      .sort((a, b) => {
+        const getLastName = (name) => {
+          const parts = (name || '').split(' ');
+          return parts[parts.length - 1];
+        };
+        return getLastName(a.Name).localeCompare(getLastName(b.Name));
+      });
+  };
+
+  // Function to check if a golfer is selected
+  const isGolferSelected = (golferId) => {
+    return selectedGolfers.some(g => g && String(g.PlayerID || g.PlayerId) === String(golferId));
   };
 
   if (loading) {
@@ -441,20 +458,45 @@ const Picks = () => {
   }
 
   return (
-    <div className="min-h-screen bg-green-900 text-white">
+    <div className="min-h-screen" style={{ 
+      background: 'linear-gradient(135deg, #215127 0%, #2a6a33 100%)',
+      color: '#fff',
+      fontFamily: "'Source Sans Pro', sans-serif"
+    }}>
       {/* Responsive Layout */}
       <div className="flex flex-col lg:flex-row min-h-screen">
         {/* Main Content Area */}
         <div className="flex-1 p-4 lg:p-6 overflow-y-auto">
           {/* Tournament Info */}
           <div className="mb-4 lg:mb-6">
-            <h1 className="text-2xl lg:text-3xl font-bold mb-2">{currentTournament?.name}</h1>
-            <p className="text-base lg:text-lg mb-4">
+            <h1 className="text-2xl lg:text-3xl font-bold mb-2" style={{ 
+              fontFamily: "'Roboto Slab', serif",
+              color: '#A67C0D',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>{currentTournament?.name}</h1>
+            <p className="text-base lg:text-lg mb-4" style={{ 
+              fontFamily: "'Source Sans Pro', sans-serif",
+              fontWeight: 300,
+              letterSpacing: '0.02em'
+            }}>
               {currentTournament && `${new Date(currentTournament.startDate).toLocaleDateString()} - ${new Date(currentTournament.endDate).toLocaleDateString()}`}
             </p>
-            <div className="bg-green-800 p-3 lg:p-4 rounded-lg mb-4 lg:mb-6">
-              <h2 className="text-lg lg:text-xl font-bold mb-2">Instructions</h2>
-              <ul className="list-disc list-inside text-sm lg:text-base">
+            <div className="p-3 lg:p-4 rounded-lg mb-4 lg:mb-6" style={{ 
+              background: 'rgba(255, 255, 255, 0.1)',
+              borderRadius: '4px'
+            }}>
+              <h2 className="text-lg lg:text-xl font-bold mb-2" style={{ 
+                fontFamily: "'Roboto Slab', serif",
+                color: '#A67C0D',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>Instructions</h2>
+              <ul className="list-disc list-inside text-sm lg:text-base" style={{ 
+                lineHeight: '1.6',
+                color: 'rgba(255, 255, 255, 0.9)',
+                fontWeight: 300
+              }}>
                 <li>Select exactly 4 golfers for this tournament</li>
                 <li>Each golfer can only be used once per season</li>
                 <li>Picks lock when the tournament begins</li>
@@ -462,103 +504,126 @@ const Picks = () => {
             </div>
           </div>
 
-          {/* Sort Options */}
-          <div className="mb-4">
-            <select
-              value={sortOption}
-              onChange={(e) => setSortOption(e.target.value)}
-              className="w-full lg:w-auto bg-green-800 text-white px-4 py-2 rounded-lg border border-green-700 focus:outline-none focus:ring-2 focus:ring-gold-500"
-            >
-              <option value="firstNameAsc">Sort by First Name</option>
-              <option value="lastNameAsc">Sort by Last Name</option>
-              <option value="oddsAsc">Sort by Odds (Favorites First)</option>
-              <option value="oddsDesc">Sort by Odds (Longshots First)</option>
-            </select>
-          </div>
-
-          {/* Golfers Grid - Responsive columns */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 lg:gap-4 mb-6 lg:mb-8">
-            {golfers && golfers.length > 0 ? (
-              getSortedGolfers().map((golfer) => {
-                const golferId = String(golfer.PlayerID || golfer.PlayerId);
-                const isUsed = usedGolfers.some(id => String(id) === golferId);
-                const isSelected = selectedGolfers.some(g => String(g.PlayerID || g.PlayerId) === golferId);
-                
-                return (
-                  <div
-                    key={golferId}
-                    className={`bg-green-800 p-3 lg:p-4 rounded-lg shadow-lg ${isUsed ? 'opacity-50' : ''}`}
-                  >
-                    <h2 className="text-lg lg:text-xl font-bold">{golfer.Name}</h2>
-                    {oddsData[golfer.Name] && (
-                      <div className="text-xs lg:text-sm text-gray-300 mt-1">
-                        {oddsData[golfer.Name].oddsDescription && (
-                          <p>Odds to win: {oddsData[golfer.Name].oddsDescription}</p>
+          {/* Search and Dropdown */}
+          <div className="mb-4 relative">
+            <div className="flex flex-col space-y-2">
+              <input
+                type="text"
+                placeholder="Search golfers..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onFocus={() => setIsDropdownOpen(true)}
+                className="w-full text-white px-4 py-2 rounded-lg border border-green-700 focus:outline-none focus:ring-2 focus:ring-gold-500"
+                style={{ 
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  borderRadius: '4px'
+                }}
+              />
+              {isDropdownOpen && (
+                <div className="absolute z-10 w-full top-full mt-1 border border-green-700 rounded-lg shadow-lg max-h-96 overflow-y-auto" style={{ 
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  borderRadius: '4px'
+                }}>
+                  {getSortedGolfers().map((golfer) => {
+                    const golferId = String(golfer.PlayerID || golfer.PlayerId);
+                    const isUsed = usedGolfers.some(id => String(id) === golferId);
+                    const isSelected = isGolferSelected(golferId);
+                    
+                    return (
+                      <div
+                        key={golferId}
+                        onClick={() => {
+                          if (!tournamentLocked && !isUsed && !isSelected) {
+                            handleGolferSelection(golfer);
+                            setIsDropdownOpen(false);
+                          }
+                        }}
+                        className={`p-3 cursor-pointer hover:bg-green-700 ${
+                          (tournamentLocked || isUsed || isSelected) ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                        style={{ 
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          borderRadius: '4px'
+                        }}
+                      >
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium">{golfer.Name}</span>
+                          {oddsData[golfer.Name] && (
+                            <span className="text-sm text-gray-300">
+                              {oddsData[golfer.Name].oddsDescription}
+                            </span>
+                          )}
+                        </div>
+                        {(isUsed || isSelected) && (
+                          <span className="text-xs text-red-400">
+                            {isSelected ? "Already selected" : "Used in previous tournament"}
+                          </span>
                         )}
                       </div>
-                    )}
-                    <button
-                      onClick={() => handleGolferSelection(golfer)}
-                      disabled={tournamentLocked || isUsed || isSelected}
-                      className={`w-full bg-gold-500 text-green-900 px-3 lg:px-4 py-2 rounded-lg mt-2 text-sm lg:text-base ${
-                        (tournamentLocked || isUsed || isSelected) ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
-                    >
-                      {isSelected ? "Selected" : isUsed ? "Already Used" : "Select Golfer"}
-                    </button>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="col-span-full text-center py-8">
-                <p className="text-xl">No golfers available for this tournament.</p>
-                <p className="text-sm mt-2">Please try again later or contact support if the issue persists.</p>
-              </div>
-            )}
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Right Sidebar - Moves to bottom on mobile */}
-        <div className="w-full lg:w-96 bg-green-800 p-4 lg:p-6 border-t lg:border-l lg:border-t-0 border-green-700">
+        {/* Right Sidebar - Selected Golfers */}
+        <div className="w-full lg:w-96 p-4 lg:p-6 border-t lg:border-l lg:border-t-0 border-green-700" style={{ 
+          background: 'rgba(255, 255, 255, 0.1)',
+          borderRadius: '4px'
+        }}>
           <div className="lg:sticky lg:top-0">
-            <h2 className="text-xl lg:text-2xl font-bold mb-4">Selected Golfers</h2>
+            <h2 className="text-xl lg:text-2xl font-bold mb-4" style={{ 
+              fontFamily: "'Roboto Slab', serif",
+              color: '#A67C0D',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>Selected Golfers</h2>
             <div className="space-y-3 lg:space-y-4">
-              {[...Array(4)].map((_, index) => (
-                <div
-                  key={index}
-                  className={`bg-green-700 p-3 lg:p-4 rounded-lg ${
-                    selectedGolfers[index] ? 'border-2 border-gold-500' : 'border-2 border-dashed border-green-600'
-                  }`}
-                >
-                  {selectedGolfers[index] ? (
-                    <>
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="text-base lg:text-lg font-bold">{selectedGolfers[index].Name}</h3>
-                          {oddsData[selectedGolfers[index].Name] && (
-                            <div className="text-xs lg:text-sm text-gray-300 mt-1">
-                              {oddsData[selectedGolfers[index].Name].oddsDescription && (
-                                <p>Odds to win: {oddsData[selectedGolfers[index].Name].oddsDescription}</p>
-                              )}
-                            </div>
-                          )}
+              {[...Array(4)].map((_, index) => {
+                const selectedGolfer = selectedGolfers[index];
+                return (
+                  <div
+                    key={index}
+                    className={`p-3 lg:p-4 rounded-lg ${
+                      selectedGolfer ? 'border-2 border-gold-500' : 'border-2 border-dashed border-green-600'
+                    }`}
+                    style={{ 
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      borderRadius: '4px'
+                    }}
+                  >
+                    {selectedGolfer ? (
+                      <>
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="text-base lg:text-lg font-bold">{selectedGolfer.Name}</h3>
+                            {oddsData[selectedGolfer.Name] && (
+                              <div className="text-xs lg:text-sm text-gray-300 mt-1">
+                                {oddsData[selectedGolfer.Name].oddsDescription && (
+                                  <p>Odds to win: {oddsData[selectedGolfer.Name].oddsDescription}</p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          <button 
+                            onClick={() => handleClearGolfer(index)}
+                            disabled={tournamentLocked}
+                            className={`text-red-400 hover:text-red-300 ${tournamentLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                          </button>
                         </div>
-                        <button 
-                          onClick={() => handleClearGolfer(index)}
-                          disabled={tournamentLocked}
-                          className={`text-red-400 hover:text-red-300 ${tournamentLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                          </svg>
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <p className="text-green-500 text-sm lg:text-base">Golfer slot {index + 1}</p>
-                  )}
-                </div>
-              ))}
+                      </>
+                    ) : (
+                      <p className="text-green-500 text-sm lg:text-base">Golfer slot {index + 1}</p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
             <button
               onClick={handleSubmitPicks}
@@ -566,6 +631,14 @@ const Picks = () => {
               className={`w-full bg-gold-500 text-green-900 px-4 py-2 rounded-lg mt-4 text-sm lg:text-base ${
                 (tournamentLocked || selectedGolfers.filter(Boolean).length !== 4) ? "opacity-50 cursor-not-allowed" : ""
               }`}
+              style={{ 
+                background: '#A67C0D',
+                color: '#fff',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                transition: 'background-color 0.2s'
+              }}
             >
               Submit Picks
             </button>

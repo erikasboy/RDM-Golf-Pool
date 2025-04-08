@@ -2,6 +2,11 @@ const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
 const path = require('path');
+
+console.log('Loading Firebase Admin...');
+const admin = require('./config/firebase-admin');
+console.log('Firebase Admin loaded successfully');
+
 require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 
 const app = express();
@@ -13,6 +18,13 @@ console.log('All environment variables:', {
   REACT_APP_WEATHER_API_KEY: process.env.REACT_APP_WEATHER_API_KEY ? 'Set' : 'Not set',
   NODE_ENV: process.env.NODE_ENV,
   PWD: process.env.PWD
+});
+
+// Log all requests
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  console.log('Headers:', req.headers);
+  next();
 });
 
 // Enable CORS for all routes
@@ -32,6 +44,51 @@ app.use((req, res, next) => {
     REACT_APP_WEATHER_API_KEY: process.env.REACT_APP_WEATHER_API_KEY ? 'Set' : 'Not set'
   });
   next();
+});
+
+// Test Firebase Admin connection
+app.get('/api/test-firebase-admin', async (req, res) => {
+  try {
+    console.log('Testing Firebase Admin connection...');
+    
+    // Get a reference to the Firestore database
+    const db = admin.firestore();
+    
+    // Try to get a collection to verify connection
+    const testCollection = db.collection('test');
+    
+    // Get a document to verify we can read from Firestore
+    const testDoc = await testCollection.doc('test-doc').get();
+    
+    if (testDoc.exists) {
+      console.log('Test document exists:', testDoc.data());
+      return res.json({ 
+        success: true, 
+        message: 'Firebase Admin connection successful',
+        data: testDoc.data()
+      });
+    } else {
+      console.log('Test document does not exist, creating it...');
+      
+      // Create a test document
+      await testCollection.doc('test-doc').set({
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        message: 'Firebase Admin test successful'
+      });
+      
+      return res.json({ 
+        success: true, 
+        message: 'Firebase Admin connection successful, test document created'
+      });
+    }
+  } catch (error) {
+    console.error('Firebase Admin test error:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      stack: error.stack
+    });
+  }
 });
 
 // Golf API endpoint
