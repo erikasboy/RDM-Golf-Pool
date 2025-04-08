@@ -21,17 +21,7 @@ const formatDate = (dateString) => {
 
 const tournaments = [
   {
-    id: 'next-weekend',
-    name: 'Valspar Championship',
-    startDate: '2025-03-21',
-    endDate: '2025-03-24',
-    venue: 'Innisbrook Resort',
-    location: 'Palm Harbor, FL',
-    description: 'The Valspar Championship is played on the Copperhead Course at Innisbrook Resort, known for its challenging layout and the famous "Snake Pit" finishing holes.',
-    path: '/tournaments/next-weekend'
-  },
-  {
-    id: 'masters',
+    id: '654',
     name: 'The Masters Tournament',
     startDate: '2025-04-11',
     endDate: '2025-04-14',
@@ -41,7 +31,7 @@ const tournaments = [
     path: '/tournaments/masters'
   },
   {
-    id: 'pga',
+    id: '655',
     name: 'PGA Championship',
     startDate: '2025-05-16',
     endDate: '2025-05-19',
@@ -51,7 +41,7 @@ const tournaments = [
     path: '/tournaments/pga'
   },
   {
-    id: 'us-open',
+    id: '656',
     name: 'U.S. Open',
     startDate: '2025-06-13',
     endDate: '2025-06-16',
@@ -61,7 +51,7 @@ const tournaments = [
     path: '/tournaments/us-open'
   },
   {
-    id: 'open',
+    id: '657',
     name: 'The Open Championship',
     startDate: '2025-07-18',
     endDate: '2025-07-21',
@@ -72,56 +62,85 @@ const tournaments = [
   }
 ];
 
+// Add TPC as a past tournament
+const pastTournaments = [
+  {
+    id: '653',
+    name: 'The Players Championship',
+    startDate: '2025-03-14',
+    endDate: '2025-03-17',
+    venue: 'TPC Sawgrass',
+    location: 'Ponte Vedra Beach, FL',
+    description: 'The Players Championship, often referred to as the \'fifth major\', is one of the most prestigious events in professional golf. Held annually at TPC Sawgrass, this tournament features the strongest field in golf and is known for its challenging Stadium Course, particularly the iconic 17th hole island green.',
+    path: '/tournaments/tpc',
+    isCompleted: true
+  }
+];
+
 const TournamentsPage = () => {
   const [weather, setWeather] = useState(null);
   const [leaderboard, setLeaderboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAllPlayers, setShowAllPlayers] = useState(false);
+  const [nextTournament, setNextTournament] = useState(null);
+  const [field, setField] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch TPC Sawgrass leaderboard
-        const leaderboardUrl = `/api/golf?endpoint=/LeaderboardBasic/654`;
-        console.log('Attempting to fetch from:', leaderboardUrl);
+        // Find the next tournament
+        const now = new Date();
+        const allTournaments = [...tournaments, ...pastTournaments];
         
-        const leaderboardResponse = await fetch(leaderboardUrl);
-        console.log('Response status:', leaderboardResponse.status);
+        // Sort tournaments by start date
+        const sortedTournaments = allTournaments.sort((a, b) => 
+          new Date(a.startDate) - new Date(b.startDate)
+        );
         
-        // Get the raw text first
-        const responseText = await leaderboardResponse.text();
-        console.log('Raw response:', responseText);
-        
-        if (!leaderboardResponse.ok) {
-          // Try to parse error response as JSON
-          try {
-            const errorData = JSON.parse(responseText);
-            throw new Error(`Failed to fetch leaderboard data: ${leaderboardResponse.status}\nDetails: ${JSON.stringify(errorData, null, 2)}`);
-          } catch (parseError) {
-            throw new Error(`Failed to fetch leaderboard data: ${leaderboardResponse.status}\nResponse: ${responseText}`);
-          }
-        }
-        
-        // Now parse the text as JSON
-        const leaderboardData = JSON.parse(responseText);
-        setLeaderboard(leaderboardData);
+        // Find the next tournament
+        const next = sortedTournaments.find(t => new Date(t.startDate) > now);
+        setNextTournament(next || sortedTournaments[0]);
 
-        // Fetch weather data for TPC Sawgrass
-        const weatherUrl = `/api/weather?location=Ponte%20Vedra%20Beach,FL`;
-        console.log('Attempting to fetch weather from:', weatherUrl);
-        
-        const weatherResponse = await fetch(weatherUrl);
-        console.log('Weather response status:', weatherResponse.status);
-        
-        if (weatherResponse.ok) {
-          const weatherText = await weatherResponse.text();
-          console.log('Raw weather response:', weatherText);
-          try {
-            const weatherData = JSON.parse(weatherText);
-            setWeather(weatherData);
-          } catch (parseError) {
-            console.error('Error parsing weather data:', parseError);
+        // If the next tournament is not completed, fetch its weather and field
+        if (next && !next.isCompleted) {
+          const weatherUrl = `/api/weather?location=${encodeURIComponent(next.location)}`;
+          console.log('Attempting to fetch weather from:', weatherUrl);
+          
+          const weatherResponse = await fetch(weatherUrl);
+          console.log('Weather response status:', weatherResponse.status);
+          
+          if (weatherResponse.ok) {
+            const weatherText = await weatherResponse.text();
+            console.log('Raw weather response:', weatherText);
+            try {
+              const weatherData = JSON.parse(weatherText);
+              setWeather(weatherData);
+            } catch (parseError) {
+              console.error('Error parsing weather data:', parseError);
+            }
+          }
+
+          // Fetch field data
+          const fieldUrl = `/api/field?tournament=${next.id}`;
+          console.log('Attempting to fetch field from:', fieldUrl);
+          const fieldResponse = await fetch(fieldUrl);
+          console.log('Field response status:', fieldResponse.status);
+
+          if (fieldResponse.ok) {
+            const fieldText = await fieldResponse.text();
+            console.log('Raw field response:', fieldText);
+            try {
+              const fieldData = JSON.parse(fieldText);
+              console.log('Parsed field data:', fieldData);
+              setField(fieldData);
+            } catch (parseError) {
+              console.error('Error parsing field data:', parseError);
+            }
+          } else {
+            console.error('Field fetch failed:', fieldResponse.status);
+            const errorText = await fieldResponse.text();
+            console.error('Field error response:', errorText);
           }
         }
 
@@ -151,137 +170,123 @@ const TournamentsPage = () => {
 
   return (
     <div className="tournaments-page">
-      <h1>Tournaments</h1>
-      
-      {/* Featured Tournament Section - TPC Sawgrass */}
-      <div className="featured-tournament">
-        <div className="tournament-header">
-          <h2>The Players Championship</h2>
-          <div className="tournament-details">
-            <p className="dates">
-              {formatDate('2025-03-14')} - {formatDate('2025-03-17')}
-            </p>
-            <p className="location">
-              TPC Sawgrass • Ponte Vedra Beach, FL
-            </p>
+      {/* Featured Tournament Section */}
+      {nextTournament && (
+        <div className="featured-tournament">
+          <div className="tournament-header">
+            <h2>{nextTournament.name}</h2>
+            <div className="tournament-details">
+              <p className="dates">
+                {formatDate(nextTournament.startDate)} - {formatDate(nextTournament.endDate)}
+              </p>
+              <p className="location">
+                {nextTournament.venue} • {nextTournament.location}
+              </p>
+            </div>
+            <div className="tournament-description">
+              {nextTournament.description}
+            </div>
           </div>
-          <div className="tournament-description">
-            The Players Championship, often referred to as the 'fifth major', is one of the most prestigious events in professional golf. Held annually at TPC Sawgrass, this tournament features the strongest field in golf and is known for its challenging Stadium Course, particularly the iconic 17th hole island green.
-          </div>
-        </div>
 
-        {/* Main Content Area with Leaderboard and Weather Sidebar */}
-        <div className="main-content">
-          {/* Leaderboard Section */}
-          <section className="leaderboard-section">
-            <h2>Current Leaderboard</h2>
-            {leaderboard ? (
-              <>
-                <table className="leaderboard-table">
-                  <thead>
-                    <tr>
-                      <th>Pos</th>
-                      <th>Player</th>
-                      <th>Total</th>
-                      <th>Through</th>
-                      <th>Strokes</th>
-                      <th>R1</th>
-                      <th>R2</th>
-                      <th>R3</th>
-                      <th>R4</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {leaderboard.Players && leaderboard.Players.length > 0 ? (
-                      leaderboard.Players
-                        .slice(0, showAllPlayers ? undefined : 15)
-                        .map(player => {
-                          const toPar = player.TotalScore || 0;
-                          const totalStrokes = player.TotalStrokes || 0;
-                          const through = player.TotalThrough || 'F';
-                          
-                          return (
-                            <tr key={player.PlayerTournamentID}>
-                              <td>{getDisplayRank(player.Rank, leaderboard.Players)}</td>
-                              <td>{player.Name || 'Unknown'}</td>
-                              <td>{toPar >= 0 ? '+' : ''}{toPar}</td>
-                              <td>{through}</td>
-                              <td>{totalStrokes}</td>
-                              {[0, 1, 2, 3].map((index) => (
-                                <td key={index}>{player.Rounds?.[index]?.Score || '-'}</td>
-                              ))}
-                            </tr>
-                          );
-                        })
-                    ) : (
-                      <tr>
-                        <td colSpan="9" className="text-center">No player data available</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-                {leaderboard.Players && leaderboard.Players.length > 15 && !showAllPlayers && (
-                  <button className="view-more-button" onClick={() => setShowAllPlayers(true)}>
-                    View More Players
-                  </button>
-                )}
-              </>
-            ) : (
-              <p className="error">No leaderboard data available</p>
-            )}
-          </section>
-
-          {/* Weather Section */}
-          <section className="weather-section">
-            <h2>Weather Conditions</h2>
-            {weather ? (
-              <div className="weather-info">
-                <div className="current-weather">
-                  <h3>Current Conditions</h3>
-                  <div className="weather-details">
-                    <p>Temperature: {weather.current.temp_f}°F</p>
-                    <p>Wind: {weather.current.wind_mph} mph {weather.current.wind_dir}</p>
-                    <p>Humidity: {weather.current.humidity}%</p>
-                    <p>Precipitation: {weather.current.precip_in} in</p>
-                  </div>
-                </div>
-                <div className="forecast">
-                  <h3>3-Day Forecast</h3>
-                  <div className="forecast-grid">
-                    {weather.forecast.forecastday.map((day, index) => (
-                      <div key={index} className="forecast-day">
-                        <p className="date">{formatDate(day.date)}</p>
-                        <div className="weather-icon">
-                          <img src={day.day.condition.icon} alt={day.day.condition.text} />
+          {/* Main Content Area with Weather Sidebar */}
+          <div className="main-content">
+            {/* Field Section */}
+            <section className="field-section">
+              <h2>Tournament Field</h2>
+              {field.length > 0 ? (
+                <div className="field-info">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {field.slice(0, showAllPlayers ? field.length : 30).map((player) => (
+                      <div key={player.PlayerID} className="bg-white rounded-lg shadow p-4">
+                        <div className="flex items-center space-x-4">
+                          {player.PhotoURI && (
+                            <img 
+                              src={player.PhotoURI} 
+                              alt={player.Name}
+                              className="w-16 h-16 rounded-full object-cover"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          )}
+                          <div className="flex-1">
+                            <div className="font-semibold text-lg text-gray-900">{player.Name}</div>
+                            <div className="text-gray-600">{player.Country || 'N/A'}</div>
+                          </div>
                         </div>
-                        <p className="temp">{day.day.avgtemp_f}°F</p>
-                        <p className="wind">{day.day.maxwind_mph} mph</p>
-                        <p className="precip">{day.day.daily_chance_of_rain}% rain</p>
                       </div>
                     ))}
                   </div>
+                  {field.length > 30 && (
+                    <button
+                      onClick={() => setShowAllPlayers(!showAllPlayers)}
+                      className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+                    >
+                      {showAllPlayers ? 'Show Less' : `View All Players (${field.length})`}
+                    </button>
+                  )}
                 </div>
-              </div>
-            ) : (
-              <p>Weather information unavailable</p>
-            )}
-          </section>
-        </div>
-      </div>
+              ) : (
+                <div className="text-gray-500">Field information unavailable</div>
+              )}
+            </section>
 
-      {/* Other Tournaments Grid */}
+            {/* Weather Section */}
+            <section className="weather-section">
+              <h2>Current Conditions</h2>
+              {weather ? (
+                <div className="weather-info">
+                  <div className="current-weather">
+                    <h3>Current Conditions</h3>
+                    <div className="weather-details">
+                      <p>Temperature: {weather.current.temp_f}°F</p>
+                      <p>Wind: {weather.current.wind_mph} mph {weather.current.wind_dir}</p>
+                      <p>Humidity: {weather.current.humidity}%</p>
+                      <p>Precipitation: {weather.current.precip_in} in</p>
+                    </div>
+                  </div>
+                  <div className="forecast">
+                    <h3>3-Day Forecast</h3>
+                    <div className="forecast-grid">
+                      {weather.forecast.forecastday.map((day, index) => (
+                        <div key={index} className="forecast-day">
+                          <p className="date">{formatDate(day.date)}</p>
+                          <div className="weather-icon">
+                            <img src={day.day.condition.icon} alt={day.day.condition.text} />
+                          </div>
+                          <p className="temp">{day.day.avgtemp_f}°F</p>
+                          <p className="wind">{day.day.maxwind_mph} mph</p>
+                          <p className="precip">{day.day.daily_chance_of_rain}% rain</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p>Weather information unavailable</p>
+              )}
+            </section>
+          </div>
+        </div>
+      )}
+
+      {/* Tournaments Grid */}
       <div className="other-tournaments">
-        <h2>Upcoming Tournaments</h2>
+        <h2>Tournaments</h2>
         <div className="tournaments-grid">
-          {tournaments.map(tournament => {
+          {[...pastTournaments, ...tournaments].map(tournament => {
             const startDate = new Date(tournament.startDate);
-            const isUpcoming = new Date() < startDate;
+            const endDate = new Date(tournament.endDate);
+            const now = new Date();
+            const isCompleted = tournament.isCompleted || now > endDate;
+            const isUpcoming = now < startDate;
+            const isNext = nextTournament && tournament.id === nextTournament.id;
             
             return (
               <Link 
                 key={tournament.id} 
                 to={tournament.path} 
-                className={`tournament-card ${isUpcoming ? 'upcoming' : ''}`}
+                className={`tournament-card ${isUpcoming ? 'upcoming' : ''} ${isCompleted ? 'completed' : ''} ${isNext ? 'next' : ''}`}
               >
                 <h3>{tournament.name}</h3>
                 <div className="tournament-details">
@@ -294,7 +299,7 @@ const TournamentsPage = () => {
                 </div>
                 <p className="description">{tournament.description}</p>
                 <span className="view-tournament">
-                  View Tournament
+                  {isCompleted ? 'View Results' : 'View Tournament'}
                 </span>
               </Link>
             );
