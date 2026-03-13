@@ -1,299 +1,344 @@
-import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Link, NavLink } from "react-router-dom";
-import { getAuth, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { getFirestore, doc, getDoc } from "firebase/firestore";
-import { signInWithGoogle } from "./firebase";
-import Profile from "./Profile";
-import Picks from "./Picks";
-import HomePage from "./components/HomePage";
-import TournamentPage from "./components/TournamentPage";
-import MastersPage from "./components/MastersPage";
-import TournamentsPage from "./components/TournamentsPage";
-import NextWeekendPage from "./components/NextWeekendPage";
-import PGAPage from "./components/PGAPage";
-import USOpenPage from "./components/USOpenPage";
-import OpenPage from "./components/OpenPage";
-import TPCPage from "./components/TPCPage";
-import AdminPermissionTest from "./components/AdminPermissionTest";
+import React, { useState, useEffect, createContext, useContext } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  NavLink,
+  Navigate,
+} from "react-router-dom";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import HomePage from "./pages/HomePage";
+import MakePicksPage from "./pages/MakePicksPage";
+import MyPicksPage from "./pages/MyPicksPage";
+import ProfilePage from "./pages/ProfilePage";
+import ResultsPage from "./pages/ResultsPage";
+import AdminPage from "./pages/AdminPage";
+import TournamentPage from "./pages/TournamentPage";
+import TournamentsPage from "./pages/TournamentsPage";
+import { requestNotificationPermission } from "./utils/notifications";
 
-// Debug overlay component
-const DebugOverlay = ({ logs }) => {
-  const [isVisible, setIsVisible] = useState(false);
-  const [copySuccess, setCopySuccess] = useState(false);
-  
-  const copyLogs = () => {
-    try {
-      // Create a temporary textarea element
-      const textarea = document.createElement('textarea');
-      textarea.value = logs.join('\n');
-      document.body.appendChild(textarea);
-      
-      // Select and copy the text
-      textarea.select();
-      document.execCommand('copy');
-      
-      // Remove the temporary textarea
-      document.body.removeChild(textarea);
-      
-      // Show success message
-      setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 2000);
-    } catch (error) {
-      console.error('Failed to copy logs:', error);
+// PWA install prompt context
+const InstallContext = createContext(null);
+export function useInstallPrompt() {
+  return useContext(InstallContext);
+}
+
+function NavBar() {
+  const { user, isAdmin, login, logout } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Request notification permission when user logs in
+  useEffect(() => {
+    if (user) {
+      requestNotificationPermission();
     }
-  };
-  
+  }, [user]);
+
+  const navLinkClass = ({ isActive }) =>
+    `font-heading text-sm uppercase tracking-wider block py-1 ${
+      isActive ? "text-gold-400" : "text-gray-300 hover:text-white"
+    }`;
+
   return (
-    <div className="fixed bottom-0 right-0 z-50">
-      <button
-        onClick={() => setIsVisible(!isVisible)}
-        className="bg-[#215127] text-white px-3 py-1 rounded-tl-lg text-sm"
-      >
-        {isVisible ? 'Hide Debug' : 'Show Debug'}
-      </button>
-      {isVisible && (
-        <div className="bg-[#215127] text-white p-4 w-full md:w-96 h-[80vh] md:h-[60vh] overflow-auto text-base font-mono absolute bottom-full right-0 mb-2">
-          <div className="flex justify-between items-center mb-2">
-            <div className="font-bold text-lg">Debug Logs:</div>
+    <nav className="bg-golf-green-800 border-b border-golf-green-700">
+      <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+        <NavLink
+          to="/"
+          className="text-gold-500 font-heading text-xl font-bold uppercase tracking-wide"
+        >
+          RDM Golf Pool
+        </NavLink>
+
+        {user ? (
+          <>
+            {/* Desktop nav */}
+            <div className="hidden sm:flex items-center gap-4">
+              <NavLink to="/" className={navLinkClass} end>
+                Standings
+              </NavLink>
+              <NavLink to="/tournaments" className={navLinkClass}>
+                Tournaments
+              </NavLink>
+              <NavLink to="/my-picks" className={navLinkClass}>
+                My Picks
+              </NavLink>
+              {isAdmin && (
+                <NavLink to="/admin" className={navLinkClass}>
+                  Admin
+                </NavLink>
+              )}
+              <NavLink
+                to="/profile"
+                className={({ isActive }) =>
+                  `text-sm ${isActive ? "text-gold-400" : "text-gray-400 hover:text-white"}`
+                }
+              >
+                {user.displayName || user.email}
+              </NavLink>
+              <button
+                onClick={logout}
+                className="bg-gold-500 hover:bg-gold-600 text-white px-3 py-1.5 rounded text-sm font-heading uppercase"
+              >
+                Logout
+              </button>
+            </div>
+
+            {/* Mobile hamburger */}
             <button
-              onClick={copyLogs}
-              className="bg-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-600"
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="sm:hidden text-gray-300 hover:text-white p-1"
+              aria-label="Menu"
             >
-              {copySuccess ? 'Copied!' : 'Copy All'}
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {menuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
             </button>
-          </div>
-          <div className="space-y-2">
-            {logs.map((log, index) => (
-              <div key={index} className="p-2 hover:bg-[#2a6a33] rounded break-words">
-                {log}
-              </div>
-            ))}
+          </>
+        ) : (
+          <button
+            onClick={login}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-heading uppercase text-sm"
+          >
+            Sign in with Google
+          </button>
+        )}
+      </div>
+
+      {/* Mobile menu dropdown */}
+      {user && menuOpen && (
+        <div className="sm:hidden border-t border-golf-green-700 px-4 py-3 space-y-2">
+          <NavLink to="/" className={navLinkClass} end onClick={() => setMenuOpen(false)}>
+            Standings
+          </NavLink>
+          <NavLink to="/tournaments" className={navLinkClass} onClick={() => setMenuOpen(false)}>
+            Tournaments
+          </NavLink>
+          <NavLink to="/my-picks" className={navLinkClass} onClick={() => setMenuOpen(false)}>
+            My Picks
+          </NavLink>
+          {isAdmin && (
+            <NavLink to="/admin" className={navLinkClass} onClick={() => setMenuOpen(false)}>
+              Admin
+            </NavLink>
+          )}
+          <div className="pt-2 border-t border-white/10 flex items-center justify-between">
+            <NavLink
+              to="/profile"
+              className="text-gray-400 hover:text-white text-sm"
+              onClick={() => setMenuOpen(false)}
+            >
+              {user.displayName || user.email}
+            </NavLink>
+            <button
+              onClick={() => { logout(); setMenuOpen(false); }}
+              className="bg-gold-500 hover:bg-gold-600 text-white px-3 py-1.5 rounded text-sm font-heading uppercase"
+            >
+              Logout
+            </button>
           </div>
         </div>
       )}
-    </div>
+    </nav>
   );
-};
+}
 
-function App() {
-  const [user, setUser] = useState(null);
+function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (!user) return <Navigate to="/" replace />;
+  return children;
+}
+
+function AdminRoute({ children }) {
+  const { isAdmin, loading } = useAuth();
+  if (loading) return null;
+  if (!isAdmin) return <Navigate to="/" replace />;
+  return children;
+}
+
+function LoginPage() {
+  const { login, loginWithEmail } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [authError, setAuthError] = useState(null);
-  const [authMessage, setAuthMessage] = useState("");
-  const [debugLogs, setDebugLogs] = useState([]);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const auth = getAuth();
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  // Debug logging function
-  const debugLog = (message) => {
-    const timestamp = new Date().toLocaleTimeString();
-    const newLog = `[${timestamp}] ${message}`;
-    setDebugLogs(prev => {
-      const updatedLogs = [...prev, newLog].slice(-100);
-      localStorage.setItem('debugLogs', JSON.stringify(updatedLogs));
-      return updatedLogs;
-    });
-    console.log(message);
-  };
-
-  useEffect(() => {
-    console.log('Setting up auth state listener...');
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      console.log(`Auth state changed: ${user ? `User: ${user.email}` : 'No user'}`);
-      setUser(user);
-      
-      if (user) {
-        // Check if user is admin
-        const db = getFirestore();
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        setIsAdmin(userDoc.exists() && userDoc.data().role === 'admin');
-      } else {
-        setIsAdmin(false);
-      }
-      
-      setLoading(false);
-    });
-
-    return () => {
-      console.log('Cleaning up auth listener');
-      unsubscribe();
-    };
-  }, [auth]);
-
-  const handleGoogleLogin = async () => {
-    console.log('Initiating Google login with popup...');
-    try {
-      setAuthError(null);
-      setAuthMessage("Opening Google sign-in popup...");
-      const result = await signInWithGoogle();
-      console.log(`Google login successful: ${result.user.email}`);
-    } catch (error) {
-      console.error('Google login error:', error);
-      setAuthError(error.message);
-    } finally {
-      setAuthMessage("");
-    }
-  };
-
-  const handleEmailLogin = async (e) => {
+  async function handleEmailLogin(e) {
     e.preventDefault();
-    console.log('Initiating email login...');
+    setError("");
+    setSubmitting(true);
     try {
-      setAuthError(null);
-      setAuthMessage("Signing in...");
-      const result = await signInWithEmailAndPassword(auth, email, password);
-      console.log(`Email login successful: ${result.user.email}`);
-    } catch (error) {
-      console.error('Email login error:', error);
-      setAuthError(error.message);
-    } finally {
-      setAuthMessage("");
+      await loginWithEmail(email, password);
+    } catch (err) {
+      setError(
+        err.code === "auth/invalid-credential"
+          ? "Invalid email or password."
+          : err.code === "auth/user-not-found"
+          ? "No account found with that email."
+          : err.message
+      );
     }
-  };
+    setSubmitting(false);
+  }
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      console.log('User signed out');
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
+  return (
+    <div className="max-w-sm mx-auto mt-20">
+      <h1 className="text-3xl font-heading text-gold-500 mb-2 text-center">
+        RDM Golf Pool
+      </h1>
+      <p className="text-gray-300 mb-8 text-center">
+        Sign in to view standings, make picks, and compete.
+      </p>
+
+      <form onSubmit={handleEmailLogin} className="space-y-3">
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white text-sm placeholder-gray-400"
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white text-sm placeholder-gray-400"
+        />
+        {error && <p className="text-red-400 text-sm">{error}</p>}
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full bg-gold-500 hover:bg-gold-600 text-white px-4 py-2 rounded font-heading uppercase text-sm disabled:opacity-50"
+        >
+          {submitting ? "Signing in..." : "Sign In"}
+        </button>
+      </form>
+
+      <div className="flex items-center gap-3 my-6">
+        <div className="flex-1 border-t border-white/20" />
+        <span className="text-gray-400 text-xs uppercase">or</span>
+        <div className="flex-1 border-t border-white/20" />
+      </div>
+
+      <button
+        onClick={login}
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-heading uppercase text-sm"
+      >
+        Sign in with Google
+      </button>
+    </div>
+  );
+}
+
+function AppRoutes() {
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
-      <div className="loading">
-        <div className="card">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500 mx-auto mb-4"></div>
-          <p className="text-gold-500 text-lg font-semibold mb-2">
-            {authMessage || "Loading..."}
-          </p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500" />
       </div>
     );
   }
 
   return (
-    <Router>
-      <div className="min-h-screen bg-[#215127] text-white">
-        <nav className="bg-[#215127] p-4">
-          <div className="container mx-auto flex justify-between items-center">
-            <Link to="/" className="text-xl font-bold font-['Roboto_Slab'] uppercase">
-              Golf Pool App
-            </Link>
-            <div className="flex items-center space-x-4">
-              {user ? (
-                <>
-                  <NavLink 
-                    to="/profile" 
-                    className={({ isActive }) => 
-                      isActive 
-                        ? "text-[var(--color-gold)] font-['Roboto_Slab'] uppercase" 
-                        : "hover:text-gray-300 font-['Roboto_Slab'] uppercase"
-                    }
-                  >
-                    Profile
-                  </NavLink>
-                  <NavLink 
-                    to="/picks" 
-                    className={({ isActive }) => 
-                      isActive 
-                        ? "text-[var(--color-gold)] font-['Roboto_Slab'] uppercase" 
-                        : "hover:text-gray-300 font-['Roboto_Slab'] uppercase"
-                    }
-                  >
-                    My Picks
-                  </NavLink>
-                  <NavLink 
-                    to="/tournaments" 
-                    className={({ isActive }) => 
-                      isActive 
-                        ? "text-[var(--color-gold)] font-['Roboto_Slab'] uppercase" 
-                        : "hover:text-gray-300 font-['Roboto_Slab'] uppercase"
-                    }
-                  >
-                    Tournaments
-                  </NavLink>
-                  <button
-                    onClick={handleLogout}
-                    className="bg-[var(--color-gold)] hover:bg-[#e6c200] px-4 py-2 rounded-[4px] font-['Roboto_Slab'] uppercase text-black"
-                  >
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <div className="flex items-center space-x-4">
-                  <button
-                    onClick={handleGoogleLogin}
-                    className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-[4px] font-['Roboto_Slab'] uppercase"
-                  >
-                    Sign in with Google
-                  </button>
-                  <form onSubmit={handleEmailLogin} className="flex space-x-4">
-                    <input
-                      type="email"
-                      placeholder="Email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="px-4 py-2 rounded-[4px] bg-gray-700"
-                    />
-                    <input
-                      type="password"
-                      placeholder="Password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="px-4 py-2 rounded-[4px] bg-gray-700"
-                    />
-                    <button
-                      type="submit"
-                      className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-[4px] font-['Roboto_Slab'] uppercase"
-                    >
-                      Login
-                    </button>
-                  </form>
-                </div>
-              )}
-            </div>
+    <Routes>
+      <Route
+        path="/"
+        element={user ? <HomePage /> : <LoginPage />}
+      />
+      <Route
+        path="/tournaments"
+        element={
+          <ProtectedRoute>
+            <TournamentsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/picks/:tournamentKey"
+        element={
+          <ProtectedRoute>
+            <MakePicksPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/my-picks"
+        element={
+          <ProtectedRoute>
+            <MyPicksPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/results/:tournamentKey"
+        element={
+          <ProtectedRoute>
+            <ResultsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tournament/:tournamentKey"
+        element={
+          <ProtectedRoute>
+            <TournamentPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <AdminPage />
+          </AdminRoute>
+        }
+      />
+    </Routes>
+  );
+}
+
+function App() {
+  const [installPrompt, setInstallPrompt] = useState(null);
+
+  useEffect(() => {
+    function handleBeforeInstall(e) {
+      e.preventDefault();
+      setInstallPrompt(e);
+    }
+    window.addEventListener("beforeinstallprompt", handleBeforeInstall);
+    return () => window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+  }, []);
+
+  return (
+    <AuthProvider>
+      <InstallContext.Provider value={installPrompt}>
+        <Router>
+          <div className="min-h-screen">
+            <NavBar />
+            <main className="max-w-6xl mx-auto px-4 py-6">
+              <AppRoutes />
+            </main>
           </div>
-        </nav>
-
-        <main className="container mx-auto p-4">
-          <Routes>
-            <Route
-              path="/"
-              element={user ? <HomePage /> : <div>Please log in to view the pool standings.</div>}
-            />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/picks" element={<Picks />} />
-            <Route path="/tournaments" element={<TournamentsPage />} />
-            <Route path="/tournaments/next-weekend" element={<NextWeekendPage />} />
-            <Route path="/tournaments/masters" element={<MastersPage />} />
-            <Route path="/tournaments/pga" element={<PGAPage />} />
-            <Route path="/tournaments/us-open" element={<USOpenPage />} />
-            <Route path="/tournaments/open" element={<OpenPage />} />
-            <Route path="/tournaments/tpc" element={<TPCPage />} />
-            <Route path="/tournaments/:id" element={<TournamentPage />} />
-            <Route
-              path="/admin-test"
-              element={
-                isAdmin ? (
-                  <AdminPermissionTest />
-                ) : (
-                  <div className="text-center p-4">
-                    <h2 className="text-xl font-bold mb-2">Access Denied</h2>
-                    <p>You must be an admin to access this page.</p>
-                  </div>
-                )
-              }
-            />
-          </Routes>
-        </main>
-
-        <DebugOverlay logs={debugLogs} />
-      </div>
-    </Router>
+        </Router>
+      </InstallContext.Provider>
+    </AuthProvider>
   );
 }
 

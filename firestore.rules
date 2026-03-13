@@ -2,49 +2,60 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper functions
+
     function isAuthenticated() {
       return request.auth != null;
     }
-    
-    function isTestUser() {
-      return isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isTestAccount == true;
-    }
-    
+
     function isAdmin() {
-      return isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
-    // User document rules
+    // Users: anyone authed can read, write own profile only
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin() || (isAuthenticated() && request.auth.uid == userId);
+      allow write: if isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Picks collection rules
-    match /users/{userId}/picks/{pickId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.auth.uid == userId;
-      allow update, delete: if isAdmin() || (isAuthenticated() && request.auth.uid == userId);
+    // Admin can also write user docs (for toggling admin flags)
+    match /users/{userId} {
+      allow write: if isAdmin();
     }
 
-    // Admin data rules
-    match /adminData/{document=**} {
-      allow read, write: if isAdmin();
-    }
-
-    // UserScores collection rules
-    match /userScores/{document=**} {
+    // Tournaments: anyone authed can read, admins write
+    match /tournaments/{tournamentId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
 
-    // Tournaments collection rules
-    match /tournaments/{document=**} {
+    // Fields: anyone authed can read, admins write
+    match /fields/{tournamentId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
+    }
+
+    // Picks: anyone authed can read all picks, write only own picks
+    // and only before tournament starts
+    match /picks/{pickId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && get(/databases/$(database)/documents/tournaments/$(request.resource.data.tournamentKey)).data.startDate > request.time;
+      allow delete: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // Results: anyone authed can read, only Cloud Functions write (admin SDK bypasses rules)
+    match /results/{tournamentId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // Standings: anyone authed can read, only Cloud Functions write
+    match /standings/{year} {
+      allow read: if isAuthenticated();
+      allow write: if false;
     }
   }
-} 
+}

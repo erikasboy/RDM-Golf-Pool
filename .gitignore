@@ -1,7 +1,6 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
 /node_modules
+/functions/node_modules
 /.pnp
 .pnp.js
 
@@ -11,14 +10,19 @@
 # production
 /build
 
-# misc
-.DS_Store
+# environment files
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
+# Firebase service account
+config/serviceAccountKey.json
+config/
+functions/serviceAccountKey.json
+
+# debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -27,11 +31,9 @@ yarn-error.log*
 .idea/
 .vscode/
 
-# Firebase service account
-config/serviceAccountKey.json
+# OS
+.DS_Store
 
-# Sensitive data
+# sensitive / cleanup
 sensitive-data.txt
-config/
 bfg-repo-cleaner/
-test-firebase-admin.js
